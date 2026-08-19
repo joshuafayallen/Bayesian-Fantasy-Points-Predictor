@@ -1,0 +1,33 @@
+[project]
+name = "fantasy_predictor"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "altair>=6.2.1",
+    "arviz-plots>=1.2.0",
+    "arviz-stats>=1.2.0",
+    "blackjax>=1.5",
+    "daft>=0.7.9",
+    "ipykernel>=7.2.0",
+    "jupyter>=1.1.1",
+    "matplotlib==3.11.0",
+    "netcdf4>=1.7.4",
+    "nflreadpy>=0.1.5",
+    "nutpie>=0.16.8",
+    "pandas>=3.0.3",
+    "patsy>=1.0.2",
+    "plotnine>=0.15.3",
+    "polars>=1.39.3",
+    "preliz>=0.27.0",
+    "pyjanitor>=0.32.23",
+    "pymc>=6.0,<7.0",
+    "pymc-bart>=0.9",
+    "pymc-extras==0.14.0",
+    "pytensor>=3.0.7",
+    "scipy>=1.17.1",
+    "seaborn>=0.13.2",
+    "snappy>=3.3.2",
+    "statsmodels>=0.14.6",
+    "tidydraws>=0.4.3",
+    "tqdm>=4.67.3",
+]

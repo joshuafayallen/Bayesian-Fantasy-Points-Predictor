@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "model-evaluation": {
+      "source": "pymc-labs/python-analytics-skills",
+      "sourceType": "github",
+      "skillPath": "skills/model-evaluation/SKILL.md",
+      "computedHash": "17a21509a102e7213220b61f47412cefa65c275c964bb69afbef4a79eb9bb545"
+    },
+    "prior-elicitation": {
+      "source": "pymc-labs/python-analytics-skills",
+      "sourceType": "github",
+      "skillPath": "skills/prior-elicitation/SKILL.md",
+      "computedHash": "966cd69037633dceab914c95f7bed9f12788ca11e78fe50ede7c1ff3be4e7ccd"
+    },
+    "pymc-extras": {
+      "source": "pymc-labs/python-analytics-skills",
+      "sourceType": "github",
+      "skillPath": "skills/pymc-extras/SKILL.md",
+      "computedHash": "7cdf8741a730c3dd27bd1d1c18695e4e882785471218794d8d06ebd29f05cdcd"
+    },
+    "pymc-modeling": {
+      "source": "pymc-labs/python-analytics-skills",
+      "sourceType": "github",
+      "skillPath": "skills/pymc-modeling/SKILL.md",
+      "computedHash": "cb7d9aa370a7356e13fc618c597f73508132924ff2401f587165662fb40f8f53"
+    }
+  }
+}

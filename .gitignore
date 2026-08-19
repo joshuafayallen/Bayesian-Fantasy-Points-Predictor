@@ -1,0 +1,10 @@
+*.nc
+sandbox/
+.DS_Store
+.venv/
+__pycache__/
+*.egg-info/
+model-nc/
+dlab-run/
+raw-data/
+.ipynb_checkpoints/

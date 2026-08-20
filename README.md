@@ -31,6 +31,8 @@ model-nc/         fitted InferenceData netCDF files per model (huge, gitignored)
 results/, figs/   diagnostic plots and backtest/calibration output
 mock-rosters/     sample roster inputs for the decision engine
 eval_scripts/     shared evaluation helpers
+sandbox/backtest_harness.py    walk-forward backtest harness (see Backtesting below; rest of sandbox/ is gitignored scratch work)
+sandbox/summarize_backtest.py  summarizes a backtest_harness.py results CSV into pooled metrics + a model winner
 .agents/skills/   Claude Code skill references used during development (pymc-modeling, prior-elicitation, model-evaluation, pymc-extras)
 ```
 
@@ -51,6 +53,12 @@ All three use `pytensor.scan`-based recursions (rather than closed-form cumulati
 - **`ff-mlm.py`** explores a structural time-series / multilevel formulation via `pymc-extras`'s statespace module, fit on team-level score margins.
 - **`bart-mod.py`** swaps the parametric hierarchical structure for BART (Bayesian Additive Regression Trees, via `pymc-bart`) — a nonparametric alternative to hand-specifying the AR/hierarchy structure above.
 - **`estimate-latent-ability.py`** is a standalone Bradley-Terry-style local-level Kalman filter over score margins, fit separately and joined back in as the `team_form` feature used by `team_mod`.
+
+## Backtesting
+
+`src/ff-ar.py`'s own `fit_and_diagnose` only ever fits on one "everything we have" slice, so its in-sample comparison isn't real held-out accuracy. `sandbox/backtest_harness.py` is the genuine walk-forward evaluation: it ports `ar_mod`, `hs_version`, and `team_mod` faithfully out of `ff-ar.py` (same priors, same player-skill and opponent-AR construction, same two-component role-participation likelihood) and, for a given `(model, method, season, week)` fold, fits on a rolling window of prior seasons and scores the held-out week, appending one row to `results/backtest_walkforward.csv`. Each invocation runs exactly one fold and is checkpointed, so folds can be run one at a time, looped over a season, or run in parallel — `src/run_backtest.sh` does the looping; `sandbox/summarize_backtest.py` then pools the resulting CSV by model (weighted by fold size) and declares a winner, using held-out CRPS as the primary criterion (a proper scoring rule over the full predictive distribution, not just the mean) with RMSE as a tiebreak. Supports both a fast ADVI sweep and a slower NUTS confirmation pass on a subset of folds.
+
+One noted limitation: `team_mod`'s team-strength feature is precomputed once by `estimate-latent-ability.py` across the full history, and while its per-week filtered estimates are genuinely causal (no future scores leak into a given week's value), the state-space model's own hyperparameters were fit on the full-history posterior — a form of leakage the harness does not yet correct for (would need refitting that state-space model per fold).
 
 ## Decision layer
 

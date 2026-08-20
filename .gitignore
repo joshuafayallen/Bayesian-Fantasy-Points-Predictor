@@ -1,5 +1,7 @@
 *.nc
-sandbox/
+sandbox/*
+!sandbox/backtest_harness.py
+!sandbox/summarize_backtest.py
 .DS_Store
 .venv/
 __pycache__/

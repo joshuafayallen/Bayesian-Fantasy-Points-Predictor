@@ -161,61 +161,6 @@ threshold for making decisions at 50% and used the state-space model,
 the bands that this model can produce hold the true value about 52% of
 the time.
 
-``` r
-coverage_summary = backtests |>
-    summarise(
-        across(c(cov50, cov80, cov90), \(x) weighted.mean(x, w = n)),
-        .by = model
-    ) |>
-    pivot_longer(
-        cols = starts_with("cov"),
-        names_to = "nominal",
-        names_pattern = "cov(\\d+)",
-        values_to = "actual"
-    ) |>
-    mutate(
-        nominal = as.numeric(nominal),
-        actual = actual * 100,
-        model = case_match(model,
-            "baseline" ~ "Baseline (point estimate)",
-            "ar"       ~ "AR(1) Process on Opp form",
-            "hs"       ~ "HSGP on player form",
-            "team"     ~ "State-Space est team strength",
-            "stack"    ~ "Bayesian Model Stacking"
-        )
-    )
-
-label_data = coverage_summary |> filter(nominal == max(nominal))
-
-ggplot(coverage_summary, aes(nominal, actual, color = model, group = model)) +
-    geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.6) +
-    geom_line(
-        data = filter(coverage_summary, model == "Baseline (point estimate)"),
-        linetype = "dashed", linewidth = 0.9
-    ) +
-    geom_line(
-        data = filter(coverage_summary, model != "Baseline (point estimate)"),
-        linewidth = 0.9, alpha = 0.5
-    ) +
-    geom_point(size = 2.8, alpha = 0.5, position = position_jitter(width = 0.05, seed = 1994)) +
-    ggrepel::geom_label_repel(
-        data = label_data, aes(label = model),
-        size = 3.0, fontface = "bold", show.legend = FALSE
-    ) +
-    MetBrewer::scale_color_met_d(name = 'Lakota') +
-    scale_x_continuous(breaks = c(50, 80, 90), limits = c(0, 105), labels = \(x) paste0(x, "%")) +
-    scale_y_continuous(breaks = seq(0, 100, 25), limits = c(0, 100), labels = \(x) paste0(x, "%")) +
-    coord_fixed() +
-    labs(
-        x = "Nominal interval level",
-        y = "Empirical coverage",
-        title = "Interval calibration: empirical vs. nominal coverage",
-        caption = "Dashed grey diagonal = perfect calibration"
-    ) +
-    AllenMisc::theme_allen_minimal() + 
-    theme(legend.position = 'none')
-```
-
 ![](README_files/figure-commonmark/unnamed-chunk-2-1.png)
 
 So how do we use this thing? Let’s take the Yahoo Fantasy Expert’s draft

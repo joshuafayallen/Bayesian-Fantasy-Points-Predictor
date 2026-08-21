@@ -152,7 +152,7 @@ However, part of the underlying motivation of this project was to build a decisi
 
 
 ```{r}
-
+#| echo: false
 coverage_summary = backtests |>
     summarise(
         across(c(cov50, cov80, cov90), \(x) weighted.mean(x, w = n)),

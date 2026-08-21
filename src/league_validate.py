@@ -86,6 +86,7 @@ import decision_engine as de
 from calibrate_decisions import realized_total, oracle_lineup, DEFAULT_ROSTER_DEPTH, WINDOW_SEASONS, DATA_PATH
 
 OUT_CSV = "results/league_validation.csv"
+TEAM_FORM_PATH = "processed-data/team_form.parquet"  # from src/estimate-latent-ability.py, matches backtest_harness.py
 
 
 # ------------------------------------------------------------------ league setup
@@ -246,6 +247,35 @@ def run_league_fold(season, week, rosters, schedule_round, rule='chance_constrai
     from backtest_harness import fit_predict   # see calibrate_decisions.py's note on this import
 
     df = pl.read_parquet(data_path)
+    if model_name in ('team', 'stack'):
+        # team_mod's build_team (backtest_harness.py) requires D['team_form_z']/
+        # D['opp_team_form_z'], which its own scaler only produces when the raw
+        # 'team_form'/'opp_team_form' columns are already present on train/test
+        # -- this join was previously only done in backtest_harness.py's own
+        # run_one_fold, never here, so calling fit_predict('team', ...) straight
+        # off this module's plain read_parquet crashed with
+        # KeyError: 'team_form_z' the moment 'team'/'stack' became reachable
+        # (i.e. the moment model_name stopped being hardcoded to 'ar').
+        # Identical construction to backtest_harness.run_one_fold's join --
+        # keep the two in sync if team_form.parquet's schema ever changes.
+        team_form = pl.read_parquet(TEAM_FORM_PATH)
+        assert team_form.height == team_form.select('season', 'week', 'team').unique().height, (
+            "team_form.parquet has duplicate (season, week, team) keys -- "
+            "re-check the join in src/estimate-latent-ability.py before using it here"
+        )
+        opp_team_form = team_form.rename({'team': 'opp_team', 'team_form': 'opp_team_form'})
+
+        n0 = df.height
+        df = df.join(team_form, on=['season', 'week', 'team'], how='left')
+        assert df.height == n0, f"team_form join fanned out rows: {n0} -> {df.height}"
+        df = df.join(opp_team_form, on=['season', 'week', 'opp_team'], how='left')
+        assert df.height == n0, f"opp_team_form join fanned out rows: {n0} -> {df.height}"
+
+        n_missing = df.select((pl.col('team_form').is_null() | pl.col('opp_team_form').is_null()).sum()).item()
+        if n_missing:
+            print(f"warning: {n_missing} rows have no team_form/opp_team_form match -- filling with 0.0")
+        df = df.with_columns(pl.col('team_form', 'opp_team_form').fill_null(0.0))
+
     train = df.filter(
         (pl.col('season') >= season - (WINDOW_SEASONS - 1)) &
         ((pl.col('season') < season) | ((pl.col('season') == season) & (pl.col('week') < week)))

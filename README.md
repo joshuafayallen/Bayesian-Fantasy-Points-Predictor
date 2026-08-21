@@ -1,81 +1,329 @@
-# Fantasy Football Bayesian Predictor
 
-A fully Bayesian pipeline for forecasting weekly fantasy football points and turning those forecasts into lineup decisions. Every model here outputs a full posterior predictive *distribution* per player-week (not a point estimate), which is what makes downstream questions like "what's my floor 80% of the time" or "what's P(player A > player B)" answerable at all.
 
-The pipeline has three stages:
+# A Fantasy Football Points Projector
 
-1. **Data prep** — pull and clean play-by-play / roster data (`nflreadpy`), engineer lagged rate stats, and fit a standalone team-strength state-space model used as a feature.
-2. **Modeling** — several alternative Bayesian model families for `total_fantasy_points`, fit in PyMC and compared via LOO-CV.
-3. **Decision layer** — turn posterior predictive draws into actual start/sit and lineup choices under uncertainty (chance constraints, CVaR, head-to-head win probability).
-
-## Project structure
-
-```
-src/
-  data-cleaning.py            data pull + feature engineering -> processed-data/ff-processed.parquet
-  estimate-latent-ability.py  local-level state-space team-strength filter (feeds team_form feature; see note in Models section)
-  ff-ar.py                    primary hierarchical model family: ar_mod, hs_version, team_mod (see below)
-  ff-mlm.py                   structural time-series / multilevel alternative (pymc-extras statespace)
-  bart-mod.py                 BART (pymc-bart) alternative -- nonparametric, no explicit AR/hierarchy structure
-  forecast_roster.py          posterior predictive draws -> per-player summaries -> greedy roster fill
-  decision_engine.py          scenario-based lineup optimization under uncertainty (chance-constrained / CVaR)
-  calibrate_decisions.py      calibration checks for the decision layer
-  league_validate.py          backtests model output against real league outcomes
-  adp_league.py, mock_league.py   ADP / mock-draft league simulation utilities
-  sweep_summarize.py          summarize parameter-sweep results
-  run_*.sh                    shell entry points for backtests / calibration / param sweeps
-
-processed-data/   cleaned, model-ready parquet files (small, tracked)
-raw-data/         raw pulled data (large, gitignored -- regenerate via data-cleaning.py)
-model-nc/         fitted InferenceData netCDF files per model (huge, gitignored)
-results/, figs/   diagnostic plots and backtest/calibration output
-mock-rosters/     sample roster inputs for the decision engine
-eval_scripts/     shared evaluation helpers
-sandbox/backtest_harness.py    walk-forward backtest harness (see Backtesting below; rest of sandbox/ is gitignored scratch work)
-sandbox/summarize_backtest.py  summarizes a backtest_harness.py results CSV into pooled metrics + a model winner
-.agents/skills/   Claude Code skill references used during development (pymc-modeling, prior-elicitation, model-evaluation, pymc-extras)
-```
-
-## Models in `src/ff-ar.py`
-
-`ff-ar.py` builds three related hierarchical models for `total_fantasy_points`, sharing the same data-prep, priors on continuous/binary covariates, and a two-component observation mixture. That mixture isn't modeling usage/games-missed directly — both components are distributions over *points output* (a "limited role" Student-t vs. the model's main "full role" Student-t); recent games-missed and trailing snap share instead drive the *mixing weight* between them, on the reasoning that a barely-used player's score isn't well explained by matchup/skill covariates the way a full-role player's is. They're compared against each other with `az.compare` / LOO at the bottom of the script, and against genuinely held-out folds via the walk-forward harness (see Backtesting below).
-
-**`ar_mod`** — the baseline. A flat per-position intercept, a random-walk-over-tenure player-skill curve (centered to zero mean within each position so it doesn't fight the position intercept), a non-centered AR(1)-with-season-jumps opponent-defense strength curve (`opp_ar`) shared across the whole weekly timeline, and a per-player-season "recent form" random intercept — despite the name (`add_recent_form_ar`), this is *not* an AR process: it's a single non-centered `Normal(0, form_sigma)` draw per player-season, no time dimension at all. It replaced an earlier genuine within-season AR(1)-over-week version whose clean fit found `rho ≈ 0.92` but `sigma`'s posterior piled at the zero boundary — evidence the data supported essentially no real week-to-week evolution beyond one persistent per-season shift, so the AR machinery was dropped and only that persistent shift was kept.
-
-**`hs_version`** — same skeleton as `ar_mod`, with two structural swaps. The flat position intercept is replaced by a per-position linear aging curve: each position gets its own intercept and its own slope on standardized tenure (`age_slope`), so scoring rises or declines linearly with experience at a rate specific to that position. The eight (intercept, slope) pairs are drawn jointly from a correlated `MvNormal` (an LKJ prior on their covariance) rather than fit independently, so positions partially pool toward each other in both baseline level and aging rate, and the model can pick up real correlation between the two (e.g. a position with a higher baseline also tending to decline faster). The per-season random-intercept form term is replaced by a Hilbert-space GP (HSGP): a smooth nonparametric within-season curve sharing one eigenbasis across all player-seasons, with per-player-season coefficients on that shared basis, so it can bend into things like a gradual return-from-injury ramp that a static per-season shift can't. Statistically tied with `ar_mod` on held-out CRPS/RMSE, but calibrates slightly better.
-
-**`team_mod`** — `ar_mod`'s core (opponent AR, player skill, LKJ position intercept), but with the recent-form term dropped entirely and replaced by a direct test of whether a player's *own* team's offensive quality matters. Neither `ar_mod` nor `hs_version` ever use the player's own team, only the opponent's defense — `team_mod` adds two separate coefficients, one on the player's own team-strength signal and one on the opponent's, rather than a single differenced term (since a good offense inflating a player's volume and a good opposing defense suppressing it aren't assumed to be equal-and-opposite effects). A separate, unused-in-any-active-model helper (`add_team_season_ar`, for a season-level AR(1) team-quality effect) also lives in this file — a fourth architecture (`team_season_mod`) that hasn't been wired up yet; see To-do.
-
-All three use `pytensor.scan`-based recursions (rather than closed-form cumulative-sum/matrix constructions) for the AR and random-walk components, worked around a PyTensor graph-rewrite bug that a couple of structurally-similar closed-form formulations kept triggering.
-
-### Other model alternatives
-
-- **`ff-mlm.py`** is a simpler multilevel model on the same player-week data: a `ZeroSumNormal` per-team intercept, a per-position intercept, a player-skill random walk over tenure (the original closed-form `cumsum` construction, not the `scan`-based fix used in `ff-ar.py`), and one HSGP curve shared across *all* players over `week` (a league-wide seasonal shape, not per-player-season), with a single plain Student-t likelihood — no opponent-strength AR and no role/participation mixture.
-- **`bart-mod.py`** swaps only the linear covariate terms for BART (Bayesian Additive Regression Trees, via `pymc-bart`) — it keeps a flat per-player intercept and the same opponent-strength AR(1) structure (built via the closed-form `rho_powers` matrix rather than `scan`), with a single plain Student-t likelihood and no recent-form term.
-- **`estimate-latent-ability.py`** fits a local-level-trend + measurement-error state-space model (via `pymc-extras`'s statespace module) on home/rest-adjusted score margins, extracting each team's filtered per-week strength as the `team_form` feature `team_mod` uses. **Note:** `ff-ar.py`'s own comment attributes `team_form.parquet` to a different, more polished script — `sandbox/team_strength_ssm.py` (gitignored, not in this tracked repo) — which does the same thing but pulls schedules fresh via `nflreadpy` rather than reading the already-processed fantasy data. Both exist on disk; which one is actually canonical hasn't been reconciled yet.
-
-## Backtesting
-
-`src/ff-ar.py`'s own `fit_and_diagnose` only ever fits on one "everything we have" slice, so its in-sample comparison isn't real held-out accuracy. `sandbox/backtest_harness.py` is the genuine walk-forward evaluation: it ports `ar_mod`, `hs_version`, and `team_mod` faithfully out of `ff-ar.py` (same priors, same player-skill and opponent-AR construction, same two-component role-participation likelihood) and, for a given `(model, method, season, week)` fold, fits on a rolling window of prior seasons and scores the held-out week, appending one row to `results/backtest_walkforward.csv`. Each invocation runs exactly one fold and is checkpointed, so folds can be run one at a time, looped over a season, or run in parallel — `src/run_backtest.sh` does the looping; `sandbox/summarize_backtest.py` then pools the resulting CSV by model (weighted by fold size) and declares a winner, using held-out CRPS as the primary criterion (a proper scoring rule over the full predictive distribution, not just the mean) with RMSE as a tiebreak. Supports both a fast ADVI sweep and a slower NUTS confirmation pass on a subset of folds.
-
-One noted limitation: `team_mod`'s team-strength feature is precomputed once by `estimate-latent-ability.py` across the full history, and while its per-week filtered estimates are genuinely causal (no future scores leak into a given week's value), the state-space model's own hyperparameters were fit on the full-history posterior — a form of leakage the harness does not yet correct for (would need refitting that state-space model per fold).
-
-## Decision layer
-
-`decision_engine.py` scores whole *candidate lineups* on their joint posterior predictive scenario draws (not per-player marginals), because greedy per-slot optimization is only exact for maximizing expected points — chance-constrained floors, CVaR of shortfall, and head-to-head win probability all depend on the joint distribution of the lineup total, which correlated players (e.g. a QB and his own WR) distort in ways per-player summaries miss.
-
-## To-do
-
-- [ ] Extend the decision engine into a fuller probabilistic decision-under-uncertainty framework — chance-constrained score floors, CVaR of shortfall vs. a target/opponent, and a Pareto frontier over a risk-aversion parameter — following the framing in PyMC Labs' [Probabilistic Forecasting for Optimization Under Uncertainty](https://www.pymc-labs.com/blog-posts/probabilistic-forecasting-optimization-under-uncertainty) post (energy-generation planning under demand uncertainty, mapped here onto lineup decisions under score uncertainty).
-- [ ] Decide whether `team_season_mod` (a season-level AR(1) team-quality variant; the `add_team_season_ar` helper already exists in `ff-ar.py` but isn't wired into an active model) is worth adding as a fourth architecture, and port it into `backtest_harness.py` if so.
-- [ ] Reconcile `src/estimate-latent-ability.py` and `sandbox/team_strength_ssm.py` — both fit essentially the same team-strength state-space model and write `team_form.parquet`, but only one should be canonical (the sandbox version is more complete: it pulls schedules fresh via `nflreadpy` and is properly modularized). Update `ff-ar.py`'s comment to match whichever wins.
+Throughout the last four years of playing fantasy football, I have found
+myself wanting a bit more from the predictions that my platform produces
+every week. Part of it is that it only produces a single point estimate
+and some, what I presume, MCMC simulations of the floor, ceiling, and
+mean outcome. Personally, I would like to see all this as I agonize over
+whether I should start or sit a player. So I decided to build a fully
+Bayesian pipeline for forecasting and making roster decisions using a
+similar setup to [this PyMC Labs blog
+post](https://www.pymc-labs.com/blog-posts/probabilistic-forecasting-optimization-under-uncertainty)
 
 ## Setup
 
-Dependencies are managed with [uv](https://docs.astral.sh/uv/) (`pyproject.toml` / `uv.lock`, Python >= 3.14):
+Dependencies are managed with
+[`uv`](https://docs.astral.sh/uv/pip/packages/#installing-a-package). To
+run this project, you need Python 3.14 installed. To replicate this
+project, just run
 
-```
-uv sync
+    uv sync
+
+## Project Structure
+
+    fantasy-predictor/
+    ├── src/                          # data pipeline, model definitions, backtesting
+    │   ├── data-cleaning.py
+    │   ├── ff-ar.py                  # ar_mod / hs_version / team_mod
+    │   ├── ff-mlm.py
+    │   ├── bart-mod.py
+    │   ├── estimate-latent-ability.py
+    │   ├── decision_engine.py
+    │   ├── league_validate.py
+    │   ├── calibrate_decisions.py
+    │   ├── forecast_roster.py
+    │   ├── mock_league.py
+    │   ├── adp_league.py
+    │   ├── backtest_harness.py       # walk-forward CRPS/RMSE/coverage backtest
+    │   ├── summarize_backtest.py
+    │   ├── sweep_summarize.py
+    │   └── run_*.sh                  # backtest / calibration / sweep drivers
+    ├── scripts/
+    │   └── show_decision.py          # prints/writes the decision engine's actual lineup picks
+    ├── eval_scripts/
+    │   └── eval_utils.py
+    ├── processed-data/
+    │   ├── ff-processed.parquet
+    │   └── team_form.parquet
+    ├── results/
+    │   ├── backtest_walkforward.csv
+    │   ├── decision_example.csv
+    │   └── league_validation.csv
+    ├── README_files/
+    │   └── figure-commonmark/        # plot images rendered into README.md
+    ├── README.qmd
+    ├── README.md
+    ├── pyproject.toml
+    ├── uv.lock
+    ├── skills-lock.json
+    └── .gitignore
+
+## Data
+
+All data are derived from
+[`nflreadr`](https://nflreadr.nflverse.com/articles/index.html). To
+train this model, I use data from 2013, when snaps are recorded, to
+2025.
+
+- Fantasy Football Opportunity: A precomputed expected fantasy points
+  dataset. I use:
+  - Total Fantasy Points: outcome variable of interest
+  - Pass attempts, rush Attempts, receptions, and yardage to compute
+    efficiency and usage statistics
+  - Fantasy points allowed: A rolling average of fantasy points over
+    expectation allowed by the opponent to a position group
+- Schedules: a dataset containing schedule information. I use:
+  - Spread line: The spread line for the game
+  - Surface: collapsed to a binary variable where 1 indicates that the
+    game is being played on grass
+  - Roof: collapsed to a binary variable where 1 indicates whether the
+    game was played indoors
+  - Temperature: Temperature at the stadium
+  - Wind: Speed of the wind in miles per hour.
+  - Division Game: a binary variable where 1 indicates whether the game
+    is against a divisional opponent
+  - Home team: collapsed to a binary variable where 1 indicates that the
+    player is on the home team.
+  - Era: a binary indicator where 1 indicates the game occurs after the
+    2018 rule change
+- Snap counts: a dataset containing snap counts for each player:
+  - Offensive percent: percent of snaps taken on offense
+  - Special teams percent: percent of special teams snaps taken.
+- Roster: a dataset containing information on every NFL roster. I use:
+  - Rookie Year and Season to construct a player tenure variable.
+- Fantasy Football Player IDs I use:
+  - Pro Football Reference ID: merge key used to join snaps to main
+    dataset
+
+## Model Architecture
+
+3 candidate models were eventually settled on using expected log
+pointwise predictive density (ELPD) against a lot of candidate models.
+Each of the three models shares some common components. Each of them
+have the same priors on continuous and binary covariates. Each model is
+a two-component mixture where a player’s recent games-missed and lagged
+offensive snap share determine the mixtures weight between a “limited
+role” and a “full-time role.” In the spirit of building a full fantasy
+prediction machine I didn’t want to drop any players conditional on
+offensive participation.
+
+To get into the differences
+
+**ar_mod**: This was effectively the baseline model. I use flat position
+intercepts, a Gaussian random-walk over the number of years a player has
+played in the NFL to measure latent skill and age curves, and a player
+season intercept to capture deviations in player form in that particular
+season. The AR structure draws heavily on Dave Zach’s [implementation in
+his spread
+model](https://github.com/dave-zack3/nfl_bayesian_rate_model/tree/main/src/models/spread).
+I place this AR process on opponent-defense strength over the defense’s
+week-to-week form.
+
+**hs_version**: This model has two main structural swaps. I build a
+varying effects model where each position gets its own position and its
+own slope based on standardized tenure. This *tries*, to capture the
+differing maturation curves of positional groups. In the past 5 years we
+consistently see Wide Receivers break out in their rookie year while
+Tight Ends tend to break out in their second or third year. The player
+season intercept is then replaced with a Hilbert-space Gaussian Process
+over a player’s season to capture week-to-week booms or ramp up to
+injury.
+
+**team_mod**: This model differs by omitting the player season
+intercepts. I also modeled the latent ability of the player’s team and
+the opponent via a state-space model on rest-adjusted score margins
+
+## Results
+
+After running the ELPD comparisons, the results suggested that I should
+also try [model
+stacking](https://www.pymc.io/projects/examples/en/latest/diagnostics_and_criticism/model_averaging.html#stacking).
+I then ran a backtest on data from week 6 to week 15 for the 2013, 2019,
+2023, and 2024 seasons. Looking at the RMSE, we see a modest improvement
+over just using a player’s past mean.
+
+|  | Mean RMSE | Mean MAE | Mean CRPS | Average Fit Time | RMSE % Improvement vs Baseline |
+|----|----|----|----|----|----|
+| State-Space Model estimated team strength | 6.389 | 4.747 | 3.353 | 3.122 | 5.36 |
+| Bayesian Model Stacking | 6.392 | 4.748 | 3.350 | 8.908 | 5.32 |
+| AR(1) Process on Opp form | 6.404 | 4.752 | 3.357 | 2.603 | 5.14 |
+| HSGP on player form | 6.415 | 4.764 | 3.364 | 3.526 | 4.97 |
+
+However, part of the underlying motivation of this project was to build
+a decision engine where I can mitigate risky start-sit decisions. A
+chance-constrained call that rests on a player clearing a certain
+threshold x% of the time is meaningless if these intervals are not well
+calibrated. Each of these models clears this hurdle by about 2
+percentage points across each specification. For example, if we set the
+threshold for making decisions at 50% and used the state-space model,
+the bands that this model can produce hold the true value about 52% of
+the time.
+
+``` r
+coverage_summary = backtests |>
+    summarise(
+        across(c(cov50, cov80, cov90), \(x) weighted.mean(x, w = n)),
+        .by = model
+    ) |>
+    pivot_longer(
+        cols = starts_with("cov"),
+        names_to = "nominal",
+        names_pattern = "cov(\\d+)",
+        values_to = "actual"
+    ) |>
+    mutate(
+        nominal = as.numeric(nominal),
+        actual = actual * 100,
+        model = case_match(model,
+            "baseline" ~ "Baseline (point estimate)",
+            "ar"       ~ "AR(1) Process on Opp form",
+            "hs"       ~ "HSGP on player form",
+            "team"     ~ "State-Space est team strength",
+            "stack"    ~ "Bayesian Model Stacking"
+        )
+    )
+
+label_data = coverage_summary |> filter(nominal == max(nominal))
+
+ggplot(coverage_summary, aes(nominal, actual, color = model, group = model)) +
+    geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.6) +
+    geom_line(
+        data = filter(coverage_summary, model == "Baseline (point estimate)"),
+        linetype = "dashed", linewidth = 0.9
+    ) +
+    geom_line(
+        data = filter(coverage_summary, model != "Baseline (point estimate)"),
+        linewidth = 0.9, alpha = 0.5
+    ) +
+    geom_point(size = 2.8, alpha = 0.5, position = position_jitter(width = 0.05, seed = 1994)) +
+    ggrepel::geom_label_repel(
+        data = label_data, aes(label = model),
+        size = 3.0, fontface = "bold", show.legend = FALSE
+    ) +
+    MetBrewer::scale_color_met_d(name = 'Lakota') +
+    scale_x_continuous(breaks = c(50, 80, 90), limits = c(0, 105), labels = \(x) paste0(x, "%")) +
+    scale_y_continuous(breaks = seq(0, 100, 25), limits = c(0, 100), labels = \(x) paste0(x, "%")) +
+    coord_fixed() +
+    labs(
+        x = "Nominal interval level",
+        y = "Empirical coverage",
+        title = "Interval calibration: empirical vs. nominal coverage",
+        caption = "Dashed grey diagonal = perfect calibration"
+    ) +
+    AllenMisc::theme_allen_minimal() + 
+    theme(legend.position = 'none')
 ```
 
-Model fits write large (multi-GB) `InferenceData` netCDF files to `model-nc/`; these are gitignored and regenerated by running the model scripts in `src/`.
+![](README_files/figure-commonmark/unnamed-chunk-2-1.png)
+
+So how do we use this thing? Let’s take the Yahoo Fantasy Expert’s draft
+from 2025 as an imperfect example. We can’t observe the week-to-week
+add-drops or waiver-wire activity, so we can’t account for somebody
+adding Daniel Jones in the first week or two of the season or dropping
+Mike Evans when it was clear that his hamstring injury would prevent him
+from playing the rest of the year. I built a small simulator where we
+can build a round-robin schedule and have the lineups face each other.
+For demonstration purposes, I ran the decision engine on weeks 2-4 since
+we don’t have to worry about bye weeks. I will focus on team 5 in week 2
+because this is the first week where the decision engine had a different
+lineup than maximizing expected points.
+
+Normally what I would do is just look at the players with the highest
+projected point totals and then maybe adjust who is starting versus who
+is sitting based on heuristics about matchup and potential game
+conditions. So my lineup would look, mostly like the table below
+
+| player           | predicted_pts | realized_pts | won  |
+|------------------|---------------|--------------|------|
+| Russell Wilson   | 14.47         | 30.3         | TRUE |
+| Tyrone Tracy Jr. | 11.58         | 9.1          | TRUE |
+| Alvin Kamara     | 14.03         | 16.0         | TRUE |
+| Malik Nabers     | 13.92         | 37.7         | TRUE |
+| Terry McLaurin   | 9.91          | 9.8          | TRUE |
+| Trey McBride     | 14.15         | 13.8         | TRUE |
+| James Cook       | 12.36         | 26.5         | TRUE |
+
+However, this is just one rule. The decision engine has a few more.
+Conditional Value at Risk (CVaR) trades some expected points for a more
+stable floor. First we pick a target, a fixed point threshold, which in
+this example is our opponent’s projected total for the week, and an
+alpha, the fraction of worst-case scenarios we care about (20% here). To
+see what this is actually doing, I worked through a small example: ten
+representative weekly outcomes for a steady-floor player and a boom/bust
+player. For every scenario, we compute the shortfall below target, then
+average the shortfalls in just the worst 20% of scenarios. That average
+is the CVaR. The decision rule then maximizes expected points minus a
+penalty term, lambda, times that CVaR. Lambda controls how much of the
+tradeoff to make. At lambda=0, this is identical to just starting the
+highest-expected-points player. As lambda grows, the rule increasingly
+favors the player whose bad weeks are smaller in magnitude, even at the
+cost of a lower mean. In a practical sense, all we are doing is setting
+how much average performance am I willing to give up to make sure the
+floor doesn’t collapse.
+
+``` r
+draws = tibble(
+  player = rep(c("Player A (boom/bust)", "Player B (steady floor)"), each = 10),
+  total  = c(2, 4, 6, 8, 10, 12, 22, 28, 32, 36,      # A
+            10, 11, 12, 13, 14, 15, 16, 17, 18, 19)  # B
+)
+
+target = 12
+alpha  = 0.20   # worst 20% of scenarios
+
+cvar_tbl = draws |>
+  mutate(shortfall = pmax(target - total, 0)) |>
+  group_by(player) |>
+  summarise(
+    expected = mean(total),
+    cvar     = shortfall |> sort(decreasing = TRUE) |> head(ceiling(n() * alpha)) |> mean()
+  )
+
+
+lambdas = seq(0, 1, by = 0.1)
+
+objective_curve = cvar_tbl |>
+  crossing(lambda = lambdas) |>
+  mutate(objective = expected - lambda * cvar) |>
+  select(player, lambda, objective) 
+```
+
+So our CVaR framework decided on this lineup. The main difference is
+that, due to the CVaR scoring, we ended up starting Joe Burrow over
+Russell Wilson, even though the model’s own projections had Wilson
+slightly ahead (14.5 vs. 13.4 expected points). That week, Wilson went
+for 30.3 real points against Burrow’s 7.0, a 23.3-point swing we gave up
+in exchange for a lower downside tail at QB. As it happened, the team
+won the matchup either way, so this particular week is a clean example
+of what the CVaR premium actually costs: real points given up for
+protection the lineup didn’t end up needing. Meanwhile at RB, the same
+logic worked in the more typical direction, starting Tony Pollard over
+Tyrone Tracy, who has a higher ceiling but whose worst 20% of scenarios
+are meaningfully worse than Pollard’s.
+
+``` r
+example_decisions |>  
+    filter(week == 2,, lineup_type == 'rule') |>  
+    filter(player %in% c('Joe Burrow', 'Tony Pollard')) |> 
+    select(player, predicted_pts, realized_pts, won) |>
+    relocate(player, .before = predicted_pts) |> 
+    mutate(across(ends_with('pts'), \(x) round(x,2))) |> 
+    tt()
+```
+
+| player       | predicted_pts | realized_pts | won  |
+|--------------|---------------|--------------|------|
+| Joe Burrow   | 13.37         | 7.04         | TRUE |
+| Tony Pollard | 11.27         | 9.20         | TRUE |
+
+## To Do
+
+- \[\] Build a more robust decision engine to add in Pareto Analysis
+  similar to [the PyMC blog
+  post](https://www.pymc-labs.com/blog-posts/probabilistic-forecasting-optimization-under-uncertainty)
+- \[\] Improve the organization of the repo so that we can use various
+  scripts as modules and rewire the underlying scripts.
+- \[\] Build a friendlier interface to use.
+- \[\] Add a scheduler so I don’t have to run this manually everyweek

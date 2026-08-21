@@ -403,9 +403,7 @@ def add_recent_form_ar(player_season_data):
     Dropping the `week` dimension removes that non-identified AR degree of
     freedom (and the geometry cost it was imposing) while keeping the one
     piece of signal that was actually pinned down: a per-player_season
-    constant wobble around player_skill's season-level average. If a
-    future fit shows real leftover within-season structure once this
-    settles, add `week` back in deliberately rather than by default."""
+    constant wobble around player_skill's season-level average. """
     form_sigma = pm.HalfNormal('form_sigma', 2.0)
     form_z = pm.Normal('form_z', 0, 1, dims='player_season')
     form = pm.Deterministic('recent_form', form_sigma * form_z, dims='player_season')

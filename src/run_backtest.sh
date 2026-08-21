@@ -42,8 +42,8 @@ cd "$(dirname "$0")/.."   # repo root, so processed-data/ resolves
 
 METHOD="${METHOD:-nuts}"
 SEASONS="${SEASONS:-2013 2019 2023 2024}"
-WEEKS="${WEEKS:-6 8 10 12 14 15}"
-MODELS="${MODELS:-hs ar team baseline}"
+WEEKS="${WEEKS:-6 7 8 9 10 11 12 13 14 15}"
+MODELS="${MODELS:-hs ar team stack baseline}"
 OUT="${OUT:-results/backtest_walkforward.csv}"
 STACK_WEIGHTS="${STACK_WEIGHTS:-0.58,0.29,0.13}"
 
@@ -64,9 +64,9 @@ for s in $SEASONS; do
             # "is EXTRA_ARGS set at all" via `+` before expanding it,
             # which is safe even when it's empty.
             if [ "$METHOD" = "nuts" ]; then
-                python sandbox/backtest_harness.py "$m" nuts "$s" "$wk" "${NUTS_ARGS[@]}" ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} --out "$OUT"
+                python src/backtest_harness.py "$m" nuts "$s" "$wk" "${NUTS_ARGS[@]}" ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} --out "$OUT"
             else
-                python sandbox/backtest_harness.py "$m" advi "$s" "$wk" "${ADVI_ARGS[@]}" ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} --out "$OUT"
+                python src/backtest_harness.py "$m" advi "$s" "$wk" "${ADVI_ARGS[@]}" ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} --out "$OUT"
             fi
         done
     done
@@ -74,4 +74,4 @@ done
 
 echo
 echo "== summary =="
-python sandbox/summarize_backtest.py "$OUT"
+python src/summarize_backtest.py "$OUT"

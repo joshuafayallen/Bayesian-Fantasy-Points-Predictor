@@ -45,8 +45,16 @@ and decision_engine.py's rules, unchanged.
 Usage (run from the project root):
     python src/league_validate.py 2025 12 --rule cvar_averse
     python src/league_validate.py 2025 14 --rule chance_constrained --beta 0.85
+    python src/league_validate.py 2025 12 --rule chance_constrained --model hs
     ...
     python src/league_validate.py --summarize --out results/league_validation.csv
+
+--model selects which of backtest_harness.py's fitted architectures to use
+('ar', 'hs', or 'team' -- defaults to 'team', the strongest performer in
+results/backtest_walkforward.csv). Was hardcoded to 'ar' in an earlier
+version of this script -- results/league_validation.csv rows written before
+this change have no `model` column value and are reported separately by
+summarize_league() rather than silently pooled with a named model's rows.
 
 Team_b (the "opponent" in every matchup) always plays maximize_expected --
 this experiment isolates the value of team_a's smarter rule, holding the
@@ -203,21 +211,37 @@ def round_robin_schedule(team_names, n_rounds=None):
 
 # ------------------------------------------------------------------ one fold
 
-def already_done(out_csv, season, week, rule):
+def already_done(out_csv, season, week, rule, model_name=None):
     if not os.path.exists(out_csv):
         return False
     existing = pl.read_csv(out_csv)
-    return existing.filter(
+    match = existing.filter(
         (pl.col('season') == season) & (pl.col('week') == week) & (pl.col('rule') == rule)
-    ).height > 0
+    )
+    # older rows (from before `model` was tracked) have a null model column
+    # via diagonal_relaxed concat -- only treat a fold as done if it was run
+    # under the SAME model, so re-running with a different model_name isn't
+    # silently skipped as "already done" against a different model's rows.
+    if model_name is not None and 'model' in existing.columns:
+        match = match.filter(pl.col('model') == model_name)
+    return match.height > 0
 
 
 def run_league_fold(season, week, rosters, schedule_round, rule='chance_constrained',
                     rule_kwargs=None, seed=0, advi_n=6000, advi_draws=400,
-                    data_path=DATA_PATH):
+                    data_path=DATA_PATH, model_name='team'):
     """Fit once for this (season, week), then score every scheduled
     matchup under `rule`. Returns a list of row-dicts, or None if this
     week has no data / all cold starts.
+
+    model_name : which of backtest_harness.py's architectures to fit --
+        'ar', 'hs', or 'team' (same choices `fit_predict` itself accepts).
+        Was hardcoded to 'ar' here; defaulted to 'team' now since it's the
+        strongest performer in the walk-forward backtest
+        (results/backtest_walkforward.csv) -- but every rule in
+        decision_engine.py is model-agnostic (it only consumes `keep`/`S`,
+        the frame + posterior predictive draws, never anything
+        architecture-specific), so any of the three works here.
     """
     from backtest_harness import fit_predict   # see calibrate_decisions.py's note on this import
 
@@ -229,21 +253,25 @@ def run_league_fold(season, week, rosters, schedule_round, rule='chance_constrai
     test = df.filter((pl.col('season') == season) & (pl.col('week') == week))
     if len(test) == 0 or len(train) < 200:
         return None
-    r = fit_predict('ar', 'advi', train, test, seed=seed, advi_n=advi_n, advi_draws=advi_draws)
+    r = fit_predict(model_name, 'advi', train, test, seed=seed, advi_n=advi_n, advi_draws=advi_draws)
     if r is None:
         return None
     keep, S = r['keep'], r['S']
 
     rows = _score_matchups(keep, S, season, week, rosters, schedule_round,
-                           rule=rule, rule_kwargs=rule_kwargs)
+                           rule=rule, rule_kwargs=rule_kwargs, model_name=model_name)
     return rows
 
 
 def _score_matchups(keep, S, season, week, rosters, schedule_round, rule='chance_constrained',
-                    rule_kwargs=None):
+                    rule_kwargs=None, model_name=None):
     """Model-agnostic half of one fold -- given real draws `S` + realized
     `keep` for one week, score every scheduled matchup. Split out so it can
-    be exercised with fake S/keep in tests without touching pymc."""
+    be exercised with fake S/keep in tests without touching pymc.
+
+    model_name is recorded on each output row (not used for anything else
+    here) so results from different architectures can be told apart in
+    results/league_validation.csv once more than one has been run."""
     rule_kwargs = rule_kwargs or {}
     available = set(keep['player'].to_list())
     rows = []
@@ -256,7 +284,25 @@ def _score_matchups(keep, S, season, week, rosters, schedule_round, rule='chance
             base_b = de.maximize_expected(S, keep, pool=pool_b)
 
             if rule == 'chance_constrained':
-                floor = rule_kwargs.get('floor') or 0.85 * base_a.stats['expected']
+                # Default floor used to be 0.85 * expected -- a fixed
+                # fraction of the mean that ignores the lineup's own
+                # variance entirely. For a lineup total with realistic
+                # week-to-week spread, "clear 85% of the mean in 90% of
+                # scenarios" is often mathematically unreachable (rough
+                # normal-approximation check: hitting 90% coverage at
+                # 0.85*mean needs sigma/mean <~ 0.12, tighter than most
+                # real lineup totals) -- which is exactly why every one of
+                # the 79 chance_constrained rows in the first league
+                # validation run (results/league_validation.csv) came back
+                # feasible=False. base_a.stats['floor_p10'] is already the
+                # baseline lineup's own 10th-percentile total (see
+                # _package) -- self-calibrated to THIS lineup's actual
+                # spread instead of an arbitrary fraction of the mean, and
+                # roughly at the edge of feasibility for the baseline by
+                # construction, so chance_constrained has real room to
+                # either match it or find something strictly better that
+                # still clears it.
+                floor = rule_kwargs.get('floor') or base_a.stats['floor_p10']
                 beta = rule_kwargs.get('beta', 0.90)
                 smart_a = de.chance_constrained(S, keep, floor=floor, beta=beta, pool=pool_a)
                 stat_name, stat_val = 'p_clear', smart_a.stats['p_clear']
@@ -291,7 +337,7 @@ def _score_matchups(keep, S, season, week, rosters, schedule_round, rule='chance
         smart_a_realized = realized_total(keep, smart_a_players)
 
         row = dict(
-            season=season, week=week, rule=rule, team_a=team_a, team_b=team_b,
+            season=season, week=week, rule=rule, model=model_name, team_a=team_a, team_b=team_b,
             baseline_a_realized=base_a_realized, baseline_b_realized=base_b_realized,
             baseline_a_won=int(base_a_realized > base_b_realized),
             smart_a_realized=smart_a_realized,
@@ -325,9 +371,10 @@ def _score_matchups(keep, S, season, week, rosters, schedule_round, rule='chance
 
 def run_one_week(season, week, rule='chance_constrained', n_teams=10, roster_depth=None,
                  mock_draft_csv=None, adp_draft=False, lookback_seasons=2, rule_kwargs=None,
-                 out_csv=OUT_CSV, seed=0, advi_n=6000, advi_draws=400, data_path=DATA_PATH):
-    if already_done(out_csv, season, week, rule):
-        print(f"SKIP: {season} wk{week} rule={rule} already in {out_csv}")
+                 out_csv=OUT_CSV, seed=0, advi_n=6000, advi_draws=400, data_path=DATA_PATH,
+                 model_name='team'):
+    if already_done(out_csv, season, week, rule, model_name=model_name):
+        print(f"SKIP: {season} wk{week} rule={rule} model={model_name} already in {out_csv}")
         return
 
     rosters = load_rosters(season, mock_draft_csv=mock_draft_csv, adp_draft=adp_draft,
@@ -342,7 +389,7 @@ def run_one_week(season, week, rule='chance_constrained', n_teams=10, roster_dep
 
     rows = run_league_fold(season, week, rosters, schedule_round, rule=rule,
                            rule_kwargs=rule_kwargs, seed=seed, advi_n=advi_n,
-                           advi_draws=advi_draws, data_path=data_path)
+                           advi_draws=advi_draws, data_path=data_path, model_name=model_name)
     if not rows:
         print(f"SKIP: no scoreable matchups for {season} wk{week}")
         return
@@ -354,19 +401,30 @@ def run_one_week(season, week, rule='chance_constrained', n_teams=10, roster_dep
     else:
         os.makedirs(os.path.dirname(out_csv), exist_ok=True)
         new.write_csv(out_csv)
-    print(f"wrote {len(rows)} matchups for {season} wk{week} rule={rule} -> {out_csv}")
+    print(f"wrote {len(rows)} matchups for {season} wk{week} rule={rule} model={model_name} -> {out_csv}")
 
 
 # --------------------------------------------------------------- summarize
 
 def summarize_league(out_csv=OUT_CSV):
-    """Paired win-rate comparison (McNemar) + regret, per rule, across
-    every matchup-week written to `out_csv` so far."""
+    """Paired win-rate comparison (McNemar) + regret, per (rule, model)
+    pair, across every matchup-week written to `out_csv` so far. Rows from
+    before `model` was tracked (see already_done) have a null model --
+    grouped separately here rather than silently merged with a named
+    model's rows, since they were all run against 'ar' (the old hardcoded
+    default) and mixing them in would misattribute those results."""
     from scipy.stats import binomtest
 
     df = pl.read_csv(out_csv)
-    for rule in df['rule'].unique().sort().to_list():
-        d = df.filter(pl.col('rule') == rule)
+    has_model = 'model' in df.columns
+    group_cols = ['rule', 'model'] if has_model else ['rule']
+    groups = (df.select(group_cols).unique().sort(group_cols).rows(named=True))
+
+    for g in groups:
+        d = df.filter(pl.all_horizontal([pl.col(k).eq(v) if v is not None else pl.col(k).is_null()
+                                         for k, v in g.items()]))
+        rule = g['rule']
+        model_label = g.get('model') or 'ar (untracked, pre-model-column run)'
         n = d.height
         wr_base = d['baseline_a_won'].mean()
         wr_smart = d['smart_a_won'].mean()
@@ -375,7 +433,7 @@ def summarize_league(out_csv=OUT_CSV):
 
         same = d['same_lineup_as_baseline'].mean() if 'same_lineup_as_baseline' in d.columns else None
 
-        print(f"=== rule={rule}  (n={n} matchups) ===")
+        print(f"=== rule={rule}  model={model_label}  (n={n} matchups) ===")
         print(f"  baseline (maximize_expected) win rate : {wr_base:.3f}")
         print(f"  {rule} win rate                        : {wr_smart:.3f}   (lift {wr_smart - wr_base:+.3f})")
         print(f"  matchups {rule} WON that baseline would have LOST : {rescued}")
@@ -405,6 +463,9 @@ if __name__ == '__main__':
     p.add_argument('week', type=float, nargs='?')
     p.add_argument('--rule', choices=['chance_constrained', 'cvar_averse', 'head_to_head'],
                   default='chance_constrained')
+    p.add_argument('--model', choices=['ar', 'hs', 'team'], default='team',
+                  help='which fitted architecture to use (was hardcoded to ar; team_mod is '
+                       'currently the strongest performer in results/backtest_walkforward.csv)')
     p.add_argument('--n-teams', type=int, default=12,
                   help='ignored if --mock-draft is given -- team count comes from the draft')
     p.add_argument('--mock-draft', type=str, default=None,
@@ -446,4 +507,5 @@ if __name__ == '__main__':
                 mock_draft_csv=args.mock_draft, adp_draft=args.adp_draft,
                 lookback_seasons=args.lookback_seasons,
                 rule_kwargs=rule_kwargs, out_csv=args.out,
-                seed=args.seed, advi_n=args.advi_n, advi_draws=args.advi_draws)
+                seed=args.seed, advi_n=args.advi_n, advi_draws=args.advi_draws,
+                model_name=args.model)

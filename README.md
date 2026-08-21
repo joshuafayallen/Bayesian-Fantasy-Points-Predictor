@@ -10,7 +10,7 @@ mean outcome. Personally, I would like to see all this as I agonize over
 whether I should start or sit a player. So I decided to build a fully
 Bayesian pipeline for forecasting and making roster decisions using a
 similar setup to [this PyMC Labs blog
-post](https://www.pymc-labs.com/blog-posts/probabilistic-forecasting-optimization-under-uncertainty)
+post](https://www.pymc-labs.com/blog-posts/probabilistic-forecasting-optimization-under-uncertainty).
 
 ## Setup
 
@@ -27,7 +27,6 @@ project, just run
     ├── src/                          # data pipeline, model definitions, backtesting
     │   ├── data-cleaning.py
     │   ├── ff-ar.py                  # ar_mod / hs_version / team_mod
-    │   ├── ff-mlm.py
     │   ├── bart-mod.py
     │   ├── estimate-latent-ability.py
     │   ├── decision_engine.py

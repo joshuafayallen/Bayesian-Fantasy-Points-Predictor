@@ -44,22 +44,38 @@ def encode(df, cols, enums):
 
 raw_data= (
     pl.read_parquet('processed-data/ff-processed.parquet')
+    .to_dummies('position')
 )
 
-
-raw_data.glimpse()
+team_form = pl.read_parquet('processed-data/team_form.parquet')
+add_team_form = raw_data.select(pl.exclude("^.*_right$")).join(team_form, on=['season', 'week', 'team'], how='left')
+n_missing_form = add_team_form['team_form'].null_count()
+if n_missing_form:
+    print(f"warning: {n_missing_form} rows have no team_form match -- filling with 0.0")
+add_team_form = add_team_form.with_columns(pl.col('team_form').fill_null(0.0))
+# same signal, keyed on the player's OPPONENT this week -- lets team_mod
+# estimate separate coefficients for "my team's strength" vs "their
+# defense's strength" instead of assuming the two effects are equal and
+# opposite. Rename before the join since both sides otherwise collide on
+# 'team'/'team_form'.
+opp_team_form = team_form.rename({'team': 'opp_team', 'team_form': 'opp_team_form'})
+add_opp_form = add_team_form.join(opp_team_form, on=['season', 'week', 'opp_team'], how='left')
+n_missing_opp_form = add_opp_form['opp_team_form'].null_count()
+if n_missing_opp_form:
+    print(f"warning: {n_missing_opp_form} rows have no opp_team_form match -- filling with 0.0")
+add_opp_form = add_opp_form.with_columns(pl.col('opp_team_form').fill_null(0.0))
 
 LAST_SEASON = 2025 
 
 lw = (
-    raw_data
+    add_opp_form
     .filter(
         (pl.col('season') == LAST_SEASON)
     )['week'].max()
 )
 
 train = (
-    raw_data.filter(
+    add_opp_form.filter(
         (pl.col('season') < LAST_SEASON) | ((pl.col('season') == LAST_SEASON) &
         (pl.col('week') < lw))
     )
@@ -67,31 +83,34 @@ train = (
 
 
 test  = (
-    raw_data
+    add_opp_form
     .filter((pl.col('season') == LAST_SEASON) & (pl.col('week') == lw))
 )
-std_these = ['spread_line', 'roll_avg_points_allowed', 'lag_yards_per_rush_attempt', 'lag_target_share', 'lag_yards_per_target', 'lag_yards_per_pass_attempt', 'temp', 'wind', 'tenure', 'games_missed_ytd']
+std_these = ['spread_line', 'roll_avg_points_allowed', 'lag_yards_per_rush_attempt', 'lag_target_share', 'lag_yards_per_target', 'lag_yards_per_pass_attempt', 'temp', 'wind', 'tenure', 'games_missed_ytd',  'opp_team_form']
 
 binary_vars = ['is_grass', 'is_indoors', 'is_home', 'div_game', 'era']
 
-idx_cols = ['player',  'player_season', 'position', 'opp_team', 'season', 'week']
+idx_cols = ['player',  'player_season', 'opp_team', 'season', 'week']
 idxs = make_indices(raw_data, idx_cols)
 train = encode(train, cols = idx_cols, enums = idxs)
 test = encode(test,cols = idx_cols ,enums = idxs)
-
 
 scalers = fit_scalers(df = train, cols = std_these)
 train = apply_scalers(train, scalers)
 test  = apply_scalers(test,  scalers) 
 
+train.glimpse()
 
 x_train = (
     train.select(
         cs.ends_with('_z'), 
         cs.starts_with('team'), 
+        cs.starts_with('position'),
         pl.col(binary_vars)
     ).drop('team_season', 'team')
 )
+
+x_train.glimpse()
 
 coords = {col: enum.categories.to_list() for col, enum in idxs.items()}
 weeks_per_season = (
@@ -140,12 +159,6 @@ with pm.Model(coords = coords) as bart_mod:
     global_time_data = pm.Data(
         'global_time_data', 
         (season_offset_lookup[train['season_idx'].to_numpy().squeeze()] + train['week_idx'].to_numpy().squeeze()).astype('int32')
-    )
-
-
-    position_data = pm.Data(
-        'position_data',
-        train['position_idx'].to_numpy().squeeze()
     )
 
     season_data  = pm.Data(
@@ -211,14 +224,14 @@ with pm.Model(coords = coords) as bart_mod:
         mu_bart +  player_intercepts[player_data]  + f_opp  )
         
 
-    sigma_obs = pm.HalfNormal('sigma_obs', 5.0, dims = 'position')
+    sigma_obs = pm.HalfNormal('sigma_obs', 1.5)
     #nu = pm.Gamma('nu', alpha = 2, beta= 0.1)
     
 
     pm.StudentT(
         'y_obs', 
         mu = mu, 
-        sigma = sigma_obs[position_data], 
+        sigma = sigma_obs, 
         nu = 6, 
         observed = obs_data
     )

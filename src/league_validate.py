@@ -39,7 +39,7 @@ real outcomes) held fixed?
                                  averages that happen to be compared.
 
 Everything downstream of "get real posterior draws for a real week" reuses
-calibrate_decisions.py's plumbing (fit_predict from sandbox/backtest_harness.py)
+calibrate_decisions.py's plumbing (fit_predict from backtest_harness.py)
 and decision_engine.py's rules, unchanged.
 
 Usage (run from the project root):
@@ -73,20 +73,16 @@ drafted before the season) has no lookahead problem either.
 """
 
 import os
-import sys
 import argparse
 
 import numpy as np
 import polars as pl
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))                 # src/
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sandbox'))
-
 import decision_engine as de
 from calibrate_decisions import realized_total, oracle_lineup, DEFAULT_ROSTER_DEPTH, WINDOW_SEASONS, DATA_PATH
 
 OUT_CSV = "results/league_validation.csv"
-TEAM_FORM_PATH = "processed-data/team_form.parquet"  # from src/estimate-latent-ability.py, matches backtest_harness.py
+TEAM_FORM_PATH = "processed-data/team_form.parquet"  # from src/estimate_latent_ability.py, matches backtest_harness.py
 
 
 # ------------------------------------------------------------------ league setup
@@ -261,7 +257,7 @@ def run_league_fold(season, week, rosters, schedule_round, rule='chance_constrai
         team_form = pl.read_parquet(TEAM_FORM_PATH)
         assert team_form.height == team_form.select('season', 'week', 'team').unique().height, (
             "team_form.parquet has duplicate (season, week, team) keys -- "
-            "re-check the join in src/estimate-latent-ability.py before using it here"
+            "re-check the join in src/estimate_latent_ability.py before using it here"
         )
         opp_team_form = team_form.rename({'team': 'opp_team', 'team_form': 'opp_team_form'})
 

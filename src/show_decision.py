@@ -12,27 +12,23 @@ unchanged -- it just prints the lineup instead of only writing the
 aggregate CSV row that run_league_fold/_score_matchups produce.
 
 Usage (from the project root, with the venv that has pymc etc. active):
-    python scripts/show_decision.py 2025 --weeks 1 2 3 --team Team1 \
+    python src/show_decision.py 2025 --weeks 1 2 3 --team Team1 \
         --rule chance_constrained --model team
 
     # cheaper/faster first look: fewer ADVI draws, still a real fit
-    python scripts/show_decision.py 2025 --weeks 1 2 3 --team Team1 \
+    python src/show_decision.py 2025 --weeks 1 2 3 --team Team1 \
         --rule chance_constrained --model ar --advi-n 2000 --advi-draws 200
 
     # write a per-player CSV alongside the console output (one row per
     # player per lineup per week -- baseline AND the rule under test)
-    python scripts/show_decision.py 2025 --weeks 1 2 3 --team Team5 \
+    python src/show_decision.py 2025 --weeks 1 2 3 --team Team5 \
         --rule cvar_averse --model team --lam 2 \
         --csv-out results/decision_example.csv
 """
 import os
-import sys
 import argparse
 
 import polars as pl
-
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src'))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sandbox'))
 
 import decision_engine as de
 from league_validate import load_rosters, round_robin_schedule, TEAM_FORM_PATH

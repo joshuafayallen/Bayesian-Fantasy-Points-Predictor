@@ -31,3 +31,14 @@ dependencies = [
     "tidydraws>=0.4.3",
     "tqdm>=4.67.3",
 ]
+
+[project.optional-dependencies]
+# Only needed for the *_milp functions in decision_engine.py (lineup
+# selection for pools too large to enumerate exactly). The default
+# enumeration-based decision rules need no solver. Community Edition
+# (no licence file) is enough at the scenario counts decision_engine.py
+# uses -- see decision_engine.py's MILP backend docstring.
+milp = ["xpress>=9.0"]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]

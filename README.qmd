@@ -14,6 +14,9 @@ Throughout the last four years of playing fantasy football, I have found myself 
 
 
 ```{r}
+#| warning: false
+#| message: false
+#| echo: false
 library(ggrepel)
 library(MetBrewer)
 library(tinytable)
@@ -35,7 +38,7 @@ coverage_summary = backtests |>
     mutate(
         nominal = as.numeric(nominal),
         actual = actual * 100,
-        model = case_match(model,
+        model = recode_values(model,
             "baseline" ~ "Baseline (point estimate)",
             "ar"       ~ "AR(1) Process on Opp form",
             "hs"       ~ "HSGP on player form",
@@ -43,6 +46,7 @@ coverage_summary = backtests |>
             "stack"    ~ "Bayesian Model Stacking"
         )
     )
+
 
 label_data = coverage_summary |> filter(nominal == max(nominal))
 
@@ -77,7 +81,7 @@ p1 = ggplot(coverage_summary, aes(nominal, actual, color = model, group = model)
 p1
 ```
 
-At the 50% level, the model's bands hold the true outcome about 52% of the time, and about 2 points better than the baseline point-estimate model across every threshold. That's the property the rest of this project leans on: once you trust the intervals, you can build a decision rule on top of them instead of just eyeballing the mean. 
+Validated forecast uncertainty via walk-forward backtesting across four NFL seasons, achieving actual coverage within 2-4 points of nominal at every interval width tested (50/80/90%), while a naive point-estimate baseline flatlined near 37% coverage regardless of interval width.
 
 ## Setup 
 
@@ -180,7 +184,7 @@ To get into the differences
 
 **hs_version**: This model has two main structural swaps. I build a varying effects model where each position gets its own position and its own slope based on standardized tenure. This *tries*, to capture the differing maturation curves of positional groups. In the past 5 years we consistently see Wide Receivers break out in their rookie year while Tight Ends tend to break out in their second or third year. The player season intercept is then replaced with a Hilbert-space Gaussian Process over a player's season to capture week-to-week booms or ramp up to injury. 
 
-**team_mod**: This model differs by omitting the player season intercepts. I also modeled the latent ability of the player's team and the opponent via a state-space model on rest-adjusted score margins
+**team_mod**: This model differs by omitting the player season intercepts. I also modeled the latent ability of the player's team and the opponent via a state-space model on rest-adjusted score margins. The state-space approach draws inspiration from [Chris Fonnesbeck's World Cup model](https://www.pymc-labs.com/blog-posts/forecasting-the-2026-world-cup-group-stage).
 
 
 

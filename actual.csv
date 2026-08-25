@@ -1,0 +1,16 @@
+model,nominal,actual
+Baseline (point estimate),50,0.3732736095558043
+Baseline (point estimate),80,0.3732736095558043
+Baseline (point estimate),90,0.3732736095558043
+HSGP on player form,50,52.28974831184776
+HSGP on player form,80,83.35174953959485
+HSGP on player form,90,92.48618784530387
+AR(1) Process on Opp form,50,52.41252302025783
+AR(1) Process on Opp form,80,83.72007366482505
+AR(1) Process on Opp form,90,92.43707796193983
+State-Space est team strength,50,52.179251074278696
+State-Space est team strength,80,83.49907918968692
+State-Space est team strength,90,92.42480049109884
+Bayesian Model Stacking,50,52.13014119091467
+Bayesian Model Stacking,80,83.64640883977901
+Bayesian Model Stacking,90,92.57213014119091

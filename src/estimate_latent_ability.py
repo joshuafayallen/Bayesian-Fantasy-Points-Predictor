@@ -130,9 +130,9 @@ add_form  = (
 
 
 
-# keep only what ff-ar.py actually needs -- margin/rest_diff/is_home/
+# keep only what ff_ar.py actually needs -- margin/rest_diff/is_home/
 # adjusted_margin/state are leftovers from this script's own intermediate
-# tables, not something the join in ff-ar.py should be carrying around.
+# tables, not something the join in ff_ar.py should be carrying around.
 team_form_out = add_form.select('season', 'week', 'team', 'team_form')
 
 assert team_form_out.height == team_form_out.select('season', 'week', 'team').unique().height, (

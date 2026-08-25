@@ -18,7 +18,7 @@ instead of to a single player's marginal prediction.
 
 This only works walk-forward and out-of-sample: for each historical
 (season, week), fit on everything strictly BEFORE that week (exactly the
-windowed fold in sandbox/backtest_harness.py), get real posterior
+windowed fold in backtest_harness.py), get real posterior
 predictive draws for that week's real players, run each decision_engine
 rule on those draws, and then compare against what ACTUALLY happened
 (total_fantasy_points, already in the data) once the week is over. Doing
@@ -43,7 +43,7 @@ Three things get scored, per fold, per rule:
                        table vs. the best lineup obtainable from the same
                        pool with perfect hindsight -- `oracle_lineup`)
   3. resumability   -- one row per (season, week, rule), checkpointed to
-                       CSV exactly like sandbox/backtest_harness.py, so a
+                       CSV exactly like backtest_harness.py, so a
                        sweep can be run fold-by-fold from a shell loop and
                        resumed if interrupted.
 
@@ -54,26 +54,22 @@ Usage (run from the project root):
     python src/calibrate_decisions.py --summarize   # after several folds
 
 Expected cost per fold: same as backtest_harness's ADVI path, ~25-30s on a
-normal workstation (see that module's docstring for the sandbox-specific
-NUTS cost caveat -- use ADVI here for the same reason).
+normal workstation (see that module's docstring for the NUTS cost caveat --
+use ADVI here for the same reason).
 """
 
 import os
-import sys
 import argparse
 
 import numpy as np
 import polars as pl
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))                 # src/
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sandbox'))
 
 import decision_engine as de
 from decision_engine import ROSTER, FLEX_ELIGIBLE, N_FLEX
 
 DATA_PATH = "processed-data/ff-processed.parquet"
 OUT_CSV = "results/decision_calibration.csv"
-WINDOW_SEASONS = 3   # same windowing convention as sandbox/backtest_harness.py
+WINDOW_SEASONS = 3   # same windowing convention as backtest_harness.py
 
 DEFAULT_ROSTER_DEPTH = {'QB': 2, 'RB': 5, 'WR': 5, 'TE': 2}   # ~14 "rostered" players
 

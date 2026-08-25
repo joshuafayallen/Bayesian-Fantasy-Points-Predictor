@@ -38,102 +38,12 @@ This approach relies on a well predictive intervals to make this
 approach possible. At every threshold the model’s intervals capture the
 real value extremely well.
 
-``` r
-library(ggrepel)
-```
-
-    Loading required package: ggplot2
-
-``` r
-library(MetBrewer)
-library(tinytable)
-suppressPackageStartupMessages(library(tidyverse))
-
-backtests = read_csv('results/backtest_walkforward.csv')
-```
-
-    Rows: 160 Columns: 16
-
-    ── Column specification ────────────────────────────────────────────────────────
-    Delimiter: ","
-    chr  (2): model, method
-    dbl (14): n, rmse, mae, crps, spearman, cov50, cov80, cov90, rmse_base, seas...
-
-    ℹ Use `spec()` to retrieve the full column specification for this data.
-    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
-``` r
-coverage_summary = backtests |>
-    summarise(
-        across(c(cov50, cov80, cov90), \(x) weighted.mean(x, w = n)),
-        .by = model
-    ) |>
-    pivot_longer(
-        cols = starts_with("cov"),
-        names_to = "nominal",
-        names_pattern = "cov(\\d+)",
-        values_to = "actual"
-    ) |>
-    mutate(
-        nominal = as.numeric(nominal),
-        actual = actual * 100,
-        model = case_match(model,
-            "baseline" ~ "Baseline (point estimate)",
-            "ar"       ~ "AR(1) Process on Opp form",
-            "hs"       ~ "HSGP on player form",
-            "team"     ~ "State-Space est team strength",
-            "stack"    ~ "Bayesian Model Stacking"
-        )
-    )
-```
-
-    Warning: There was 1 warning in `mutate()`.
-    ℹ In argument: `model = case_match(...)`.
-    Caused by warning:
-    ! `case_match()` was deprecated in dplyr 1.2.0.
-    ℹ Please use `recode_values()` instead.
-
-``` r
-label_data = coverage_summary |> filter(nominal == max(nominal))
-
-p1 = ggplot(coverage_summary, aes(nominal, actual, color = model, group = model)) +
-    geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.6) +
-    geom_line(
-        data = filter(coverage_summary, model == "Baseline (point estimate)"),
-        linetype = "dashed", linewidth = 0.9
-    ) +
-    geom_line(
-        data = filter(coverage_summary, model != "Baseline (point estimate)"),
-        linewidth = 0.9, alpha = 0.5
-    ) +
-    geom_point(size = 2.8, alpha = 0.5, position = position_jitter(width = 0.05, seed = 1994)) +
-    geom_label_repel(
-        data = label_data, aes(label = model),
-        size = 3.0, fontface = "bold", show.legend = FALSE
-    ) +
-    scale_color_met_d(name = 'Lakota') +
-    scale_x_continuous(breaks = c(50, 80, 90), limits = c(0, 105), labels = \(x) paste0(x, "%")) +
-    scale_y_continuous(breaks = seq(0, 100, 25), limits = c(0, 100), labels = \(x) paste0(x, "%")) +
-    coord_fixed() +
-    labs(
-        x = "Nominal interval level",
-        y = "Empirical coverage",
-        title = "Interval calibration: empirical vs. nominal coverage",
-        caption = "Dashed grey diagonal = perfect calibration"
-    ) +
-    AllenMisc::theme_allen_minimal() + 
-    theme(legend.position = 'none')
-
-p1
-```
-
 ![](README_files/figure-commonmark/unnamed-chunk-1-1.png)
 
-At the 50% level, the model’s bands hold the true outcome about 52% of
-the time, and about 2 points better than the baseline point-estimate
-model across every threshold. That’s the property the rest of this
-project leans on: once you trust the intervals, you can build a decision
-rule on top of them instead of just eyeballing the mean.
+Validated forecast uncertainty via walk-forward backtesting across four
+NFL seasons, achieving actual coverage within 2-4 points of nominal at
+every interval width tested (50/80/90%), while a naive point-estimate
+baseline flatlined near 37% coverage regardless of interval width.
 
 ## Setup
 
@@ -276,7 +186,10 @@ injury.
 
 **team_mod**: This model differs by omitting the player season
 intercepts. I also modeled the latent ability of the player’s team and
-the opponent via a state-space model on rest-adjusted score margins
+the opponent via a state-space model on rest-adjusted score margins. The
+state-space approach draws inspiration from [Chris Fonnesbeck’s World
+Cup
+model](https://www.pymc-labs.com/blog-posts/forecasting-the-2026-world-cup-group-stage).
 
 ## Results
 

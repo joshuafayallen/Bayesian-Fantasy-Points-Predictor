@@ -1,10 +1,10 @@
 #!/bin/bash
 # Walk-forward backtest sweep comparing model architectures from
-# src/ff-ar.py (see sandbox/backtest_harness.py's module docstring for
+# src/ff_ar.py (see src/backtest_harness.py's module docstring for
 # what each one is: hs, ar, team, plus `stack`, a blend of team+hs via
 # az.weight_predictions -- team_ar and team_season are retired/not in
-# src/ff-ar.py's current model set, see the harness's own "retired
-# models" note), via sandbox/backtest_harness.py. Every (model, season,
+# src/ff_ar.py's current model set, see the harness's own "retired
+# models" note), via src/backtest_harness.py. Every (model, season,
 # week) fold is
 # checkpointed to $OUT as it completes -- safe to Ctrl-C and rerun,
 # already-done folds are skipped (see already_done() in the harness).
@@ -34,7 +34,7 @@
 # STACK_WEIGHTS is "team,hs,ar" and is only used when MODELS includes
 # `stack` -- default (0.58, 0.29, 0.13) is az.compare()'s LOO stacking
 # weight for team_mod/hs_version/ar_mod from the full-history
-# src/ff-ar.py run. Passed straight through to backtest_harness.py's
+# src/ff_ar.py run. Passed straight through to backtest_harness.py's
 # --stack-weights.
 
 set -euo pipefail

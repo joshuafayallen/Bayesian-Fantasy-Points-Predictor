@@ -2,6 +2,29 @@
 
 # A Fantasy Football Points Projector
 
+Who should I start this week in fantasy football? Fantasy football is a
+multi-billion-dollar industry with almost every major publication
+leading their weekend coverage with “Start Sit Advice for week X.” In
+the platform you use there is a proprietary model that outputs a single
+forecast for the upcoming week. However, we all intuitively understand
+that Football has a lot of uncertainty. Take week 2 of last years NFL
+season if you had both Joe Burrow and Russell Wilson you may have
+debated about who to start. Joe Burrow has a much higher floor and boom
+potential, but Russell Wilson was playing against, what we would come to
+know, as one of the worst defenses in by DVOA in quite awhile. While
+less likely Wilson had a variety of scenarios where he could put up a
+vintage Russell Wilson performance. Projections heading into the game
+were fairly similar. Wilson was slightly ahead (14.5 vs. 13.4 expected
+points). That week, Wilson went for 30.3 real points against Burrow’s
+7.0, a 23.3-point swing.
+
+So who should have this person started going into the game? Since we
+were little we were probably told to think through the worst case
+outcomes before making a decision. Instead of using rules of thumb or
+preconceptions about players or matchups heading into the game, what if
+we could incorporate the uncertainty in our forecasts and a set of the
+worst case decisions to make more informed roster decisions?
+
 Throughout the last four years of playing fantasy football, I have found
 myself wanting a bit more from the predictions that my platform produces
 every week. Part of it is that it only produces a single point estimate
@@ -11,6 +34,106 @@ whether I should start or sit a player. So I decided to build a fully
 Bayesian pipeline for forecasting and making roster decisions using a
 similar setup to [this PyMC Labs blog
 post](https://www.pymc-labs.com/blog-posts/probabilistic-forecasting-optimization-under-uncertainty).
+This approach relies on a well predictive intervals to make this
+approach possible. At every threshold the model’s intervals capture the
+real value extremely well.
+
+``` r
+library(ggrepel)
+```
+
+    Loading required package: ggplot2
+
+``` r
+library(MetBrewer)
+library(tinytable)
+suppressPackageStartupMessages(library(tidyverse))
+
+backtests = read_csv('results/backtest_walkforward.csv')
+```
+
+    Rows: 160 Columns: 16
+
+    ── Column specification ────────────────────────────────────────────────────────
+    Delimiter: ","
+    chr  (2): model, method
+    dbl (14): n, rmse, mae, crps, spearman, cov50, cov80, cov90, rmse_base, seas...
+
+    ℹ Use `spec()` to retrieve the full column specification for this data.
+    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+``` r
+coverage_summary = backtests |>
+    summarise(
+        across(c(cov50, cov80, cov90), \(x) weighted.mean(x, w = n)),
+        .by = model
+    ) |>
+    pivot_longer(
+        cols = starts_with("cov"),
+        names_to = "nominal",
+        names_pattern = "cov(\\d+)",
+        values_to = "actual"
+    ) |>
+    mutate(
+        nominal = as.numeric(nominal),
+        actual = actual * 100,
+        model = case_match(model,
+            "baseline" ~ "Baseline (point estimate)",
+            "ar"       ~ "AR(1) Process on Opp form",
+            "hs"       ~ "HSGP on player form",
+            "team"     ~ "State-Space est team strength",
+            "stack"    ~ "Bayesian Model Stacking"
+        )
+    )
+```
+
+    Warning: There was 1 warning in `mutate()`.
+    ℹ In argument: `model = case_match(...)`.
+    Caused by warning:
+    ! `case_match()` was deprecated in dplyr 1.2.0.
+    ℹ Please use `recode_values()` instead.
+
+``` r
+label_data = coverage_summary |> filter(nominal == max(nominal))
+
+p1 = ggplot(coverage_summary, aes(nominal, actual, color = model, group = model)) +
+    geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.6) +
+    geom_line(
+        data = filter(coverage_summary, model == "Baseline (point estimate)"),
+        linetype = "dashed", linewidth = 0.9
+    ) +
+    geom_line(
+        data = filter(coverage_summary, model != "Baseline (point estimate)"),
+        linewidth = 0.9, alpha = 0.5
+    ) +
+    geom_point(size = 2.8, alpha = 0.5, position = position_jitter(width = 0.05, seed = 1994)) +
+    geom_label_repel(
+        data = label_data, aes(label = model),
+        size = 3.0, fontface = "bold", show.legend = FALSE
+    ) +
+    scale_color_met_d(name = 'Lakota') +
+    scale_x_continuous(breaks = c(50, 80, 90), limits = c(0, 105), labels = \(x) paste0(x, "%")) +
+    scale_y_continuous(breaks = seq(0, 100, 25), limits = c(0, 100), labels = \(x) paste0(x, "%")) +
+    coord_fixed() +
+    labs(
+        x = "Nominal interval level",
+        y = "Empirical coverage",
+        title = "Interval calibration: empirical vs. nominal coverage",
+        caption = "Dashed grey diagonal = perfect calibration"
+    ) +
+    AllenMisc::theme_allen_minimal() + 
+    theme(legend.position = 'none')
+
+p1
+```
+
+![](README_files/figure-commonmark/unnamed-chunk-1-1.png)
+
+At the 50% level, the model’s bands hold the true outcome about 52% of
+the time, and about 2 points better than the baseline point-estimate
+model across every threshold. That’s the property the rest of this
+project leans on: once you trust the intervals, you can build a decision
+rule on top of them instead of just eyeballing the mean.
 
 ## Setup
 
@@ -21,28 +144,49 @@ project, just run
 
     uv sync
 
+## Testing
+
+`src/models.py` is the single source of truth for
+`ar_mod`/`hs_version`/`team_mod` – `tests/test_models.py` builds each
+architecture’s PyMC graph against tiny synthetic data (no real fit) to
+catch wiring regressions (wrong shape, wrong dim, a dropped
+`Deterministic`) in seconds:
+
+    uv run pytest tests/test_models.py -v
+
+`tests/test_backtest_integration.py` is the slower, real-data check: it
+actually fits each model via ADVI on one real fold and confirms
+`backtest_harness.py`’s CLI path still runs end to end. Opt in
+explicitly since each fit takes ~15-30s:
+
+    RUN_SLOW_TESTS=1 uv run pytest tests/test_backtest_integration.py -v
+
 ## Project Structure
 
     fantasy-predictor/
     ├── src/                          # data pipeline, model definitions, backtesting
-    │   ├── data-cleaning.py
-    │   ├── ff-ar.py                  # ar_mod / hs_version / team_mod
-    │   ├── bart-mod.py
-    │   ├── estimate-latent-ability.py
-    │   ├── decision_engine.py
-    │   ├── league_validate.py
-    │   ├── calibrate_decisions.py
-    │   ├── forecast_roster.py
-    │   ├── mock_league.py
-    │   ├── adp_league.py
+    │   ├── data_cleaning.py
+    │   ├── estimate_latent_ability.py
+    │   ├── models.py                 # shared PyMC model-building plumbing (single source of truth
+    │   │                             #   for ar_mod / hs_version / team_mod, used by both ff_ar.py
+    │   │                             #   and backtest_harness.py)
+    │   ├── ff_ar.py                  # full-history fit + diagnostics -- the ground truth for what
+    │   │                             #   each model architecture is
+    │   ├── bart_mod.py
     │   ├── backtest_harness.py       # walk-forward CRPS/RMSE/coverage backtest
     │   ├── summarize_backtest.py
+    │   ├── decision_engine.py
+    │   ├── forecast_roster.py
+    │   ├── calibrate_decisions.py
+    │   ├── league_validate.py
+    │   ├── mock_league.py
+    │   ├── adp_league.py
+    │   ├── show_decision.py          # prints/writes the decision engine's actual lineup picks
     │   ├── sweep_summarize.py
     │   └── run_*.sh                  # backtest / calibration / sweep drivers
-    ├── scripts/
-    │   └── show_decision.py          # prints/writes the decision engine's actual lineup picks
-    ├── eval_scripts/
-    │   └── eval_utils.py
+    ├── tests/
+    │   ├── test_models.py            # fast synthetic-data smoke tests for src/models.py
+    │   └── test_backtest_integration.py  # slow, real-data ADVI fit (opt-in via RUN_SLOW_TESTS=1)
     ├── processed-data/
     │   ├── ff-processed.parquet
     │   └── team_form.parquet
@@ -160,7 +304,7 @@ threshold for making decisions at 50% and used the state-space model,
 the bands that this model can produce hold the true value about 52% of
 the time.
 
-![](README_files/figure-commonmark/unnamed-chunk-2-1.png)
+![](README_files/figure-commonmark/unnamed-chunk-3-1.png)
 
 So how do we use this thing? Let’s take the Yahoo Fantasy Expert’s draft
 from 2025 as an imperfect example. We can’t observe the week-to-week
@@ -267,7 +411,13 @@ example_decisions |>
 - \[\] Build a more robust decision engine to add in Pareto Analysis
   similar to [the PyMC blog
   post](https://www.pymc-labs.com/blog-posts/probabilistic-forecasting-optimization-under-uncertainty)
-- \[\] Improve the organization of the repo so that we can use various
-  scripts as modules and rewire the underlying scripts.
+- [x] Improve the organization of the repo so that we can use various
+  scripts as modules and rewire the underlying scripts. (`src/models.py`
+  is now the single source of truth for the PyMC model-building code;
+  `ff_ar.py` and `backtest_harness.py` both import it instead of each
+  keeping their own hand-ported copy.)
+- \[\] Try out [Alchemize](https://github.com/pymc-labs/alchemize) to
+  rebuild the underlying models in Rust to speed up sampling,
+  - Currently everything samples in 30-40 minutes
 - \[\] Build a friendlier interface to use.
 - \[\] Add a scheduler so I don’t have to run this manually everyweek

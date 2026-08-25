@@ -305,8 +305,7 @@ So our CVaR framework decided on this lineup. The main difference is that, due t
 
 
 ```{r}
-
-
+#| echo: false
 example_decisions |>  
     filter(week == 2,, lineup_type == 'rule') |>  
     filter(player %in% c('Joe Burrow', 'Tony Pollard')) |> 
@@ -324,8 +323,8 @@ example_decisions |>
 ## To Do 
 
 - [] Build a more robust decision engine to add in Pareto Analysis similar to [the PyMC blog post](https://www.pymc-labs.com/blog-posts/probabilistic-forecasting-optimization-under-uncertainty)
-- [x] Improve the organization of the repo so that we can use various scripts as modules and rewire the underlying scripts. (`src/models.py` is now the single source of truth for the PyMC model-building code; `ff_ar.py` and `backtest_harness.py` both import it instead of each keeping their own hand-ported copy.)
+- [x] Improve the organization of the repo so that we can use various scripts as modules and rewire the underlying scripts. 
 - [] Try out [Alchemize](https://github.com/pymc-labs/alchemize) to rebuild the underlying models in Rust to speed up sampling,
     - Currently everything samples in 30-40 minutes
 - [] Build a friendlier interface to use. 
-- [] Add a scheduler so I don't have to run this manually everyweek 
+- [] Add a scheduler so I don't have to run this manually every week 

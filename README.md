@@ -304,16 +304,6 @@ logic worked in the more typical direction, starting Tony Pollard over
 Tyrone Tracy, who has a higher ceiling but whose worst 20% of scenarios
 are meaningfully worse than Pollard’s.
 
-``` r
-example_decisions |>  
-    filter(week == 2,, lineup_type == 'rule') |>  
-    filter(player %in% c('Joe Burrow', 'Tony Pollard')) |> 
-    select(player, predicted_pts, realized_pts, won) |>
-    relocate(player, .before = predicted_pts) |> 
-    mutate(across(ends_with('pts'), \(x) round(x,2))) |> 
-    tt()
-```
-
 | player       | predicted_pts | realized_pts | won  |
 |--------------|---------------|--------------|------|
 | Joe Burrow   | 13.37         | 7.04         | TRUE |

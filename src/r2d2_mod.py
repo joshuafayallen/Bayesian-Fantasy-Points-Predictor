@@ -1,9 +1,13 @@
-
+from models import base_data
 import arviz as az
 import numpy as np
 import polars as pl
 import polars.selectors as cs
 import pymc as pm
+import pymc_extras as pmx
+import preliz as pz
+import pytensor.tensor as pt
+import pytensor
 
 import models
 
@@ -208,146 +212,204 @@ def fit_and_diagnose(model, name, target_accept=0.99, prior_check_only=True, sam
     return idata
 
 
-# ============================================================================
-# ar_mod -- flat per-position intercept + opponent-strength AR(1)
-# ============================================================================
 
-ar_mod = models.build_ar_mod(D, coords, season_offsets, T, boundary_cols,
-                              position_of_player, position_group_counts)
+pz.Beta(mu = 0.37, nu = 35).plot_pdf()
 
+def add_player_skill(position_of_player, total_scale=None):
+    n_tenure = len(coords['tenure'])
+    if total_scale is None:
+        init_sigma = pm.HalfNormal('init_sigma', 4.0)
+        rw_sigma = pm.HalfNormal('rw_sigma', 0.5)
+    else:
+        career_shape = pm.Beta('career_shape', 2, 2)
+        init_sigma = total_scale * pt.sqrt(career_shape)
+        rw_sigma = total_scale * pt.sqrt(1 - career_shape)
+    z_innov = pm.Normal('z_innov', 0, 1, dims=('player', 'tenure'))
+    level0 = init_sigma * z_innov[:, 0]
+    steps = rw_sigma * z_innov[:, 1:]  # (player, n_tenure - 1)
 
+    # player_skill_raw via pytensor.scan instead of
+    # concatenate([level0[:, None], level0[:, None] + cumsum(steps, axis=1)])
+    # -- that concatenate (combining level0 with a cumsum-of-a-Mul-derived
+    # block) is a known trigger for a pytensor graph-rewrite bug ("BUG IN
+    # FGRAPH.REPLACE OR A LISTENER", local_add_of_sparse_write). scan builds
+    # the recursion step-by-step, so there's no concatenate-of-a-computed-
+    # block for pytensor's canonicalizer to rewrite into a sparse write.
+    # Verified numerically identical to the cumsum-based construction in a
+    # standalone numpy script.
+    def _tenure_step(step_t, prev):
+        return prev + step_t
 
+    steps_seq = steps.T  # (n_tenure - 1, player)
+    path, _ = pytensor.scan(
+        fn=_tenure_step,
+        sequences=[steps_seq],
+        outputs_info=[level0],
+        strict=True,
+    )  # (n_tenure - 1, player) -- tenure steps 1..n_tenure-1
 
-idata_ar = fit_and_diagnose(ar_mod, 'ar')
-idata_ar = fit_and_diagnose(ar_mod, 'ar', prior_check_only=False)
+    player_skill_raw = pt.concatenate([level0[None, :], path], axis=0).T  # (player, n_tenure)
 
-az.rcParams['plot.max_subplots'] = 60
+    position_of_player_data = pm.Data('position_of_player', position_of_player, dims='player')
 
-az.plot_ess_evolution(
-        idata_ar, var_names=[rv.name for rv in ar_mod.free_RVs if rv.size.eval() <= 10]
+    # one-hot (position x player) matmul instead of
+    # inc_subtensor(group_sum[position_of_player_data, :], player_skill_raw)
+    # -- same local_add_of_sparse_write trigger family as above.
+    # position_of_player is a plain numpy array (not pm.Data), known at
+    # graph-build time, so the one-hot matrix is a static constant -- one
+    # dense matmul, not a meaningfully different computation.
+    one_hot_position = np.zeros((n_positions, len(position_of_player)))
+    one_hot_position[position_of_player, np.arange(len(position_of_player))] = 1.0
+    group_sum = pt.dot(one_hot_position, player_skill_raw)
+    group_mean = group_sum / position_group_counts[:, None]
+
+    return pm.Deterministic(
+        'player_skill',
+        player_skill_raw - group_mean[position_of_player_data, :],
+        dims=('player', 'tenure'),
     )
+def add_strength_ar(prefix, group_dim, group_idx_data, global_time_data, total_scale):
+    rho = pm.Beta(f'{prefix}_rho', 4, 2)
+    ar_shape = pm.Beta(f'{prefix}_shape', 2, 2)     # within-season innovation vs. season-jump
+    sigma_theta  = total_scale * pt.sqrt(ar_shape)
+    sigma_season = total_scale * pt.sqrt(1 - ar_shape)
+    theta_init   = pm.Normal(f'{prefix}_theta_init', 0, 1, dims=group_dim)
+    z_theta = pm.Normal(f'{prefix}_z_theta', 0, 1, dims=(group_dim, 'global_step'))
+    z_eta   = pm.Normal(f'{prefix}_z_eta', 0, 1, dims=(group_dim, 'season_gap'))
 
+    # boundary-column injection as a dense scatter matmul instead of
+    # innov[:, boundary_cols] += ... -- pt.set_subtensor/AdvancedIncSubtensor
+    # immediately followed by an Add downstream is a known trigger for the
+    # same FGRAPH.REPLACE / local_add_of_sparse_write bug. scatter_mat is a
+    # small fixed 0/1 constant, so this is one extra small matmul.
+    # `if len(boundary_cols)` guards a single-season slice (a short
+    # backtest fold's train window can legitimately have no season
+    # boundary at all) -- harmless no-op for the usual multi-season case.
+    if len(boundary_cols):
+        n_gaps = len(boundary_cols)
+        scatter_mat = np.zeros((n_gaps, T - 1))
+        scatter_mat[np.arange(n_gaps), boundary_cols] = 1.0
+        season_jump = sigma_season * pt.dot(z_eta, scatter_mat)  # (group_dim, T-1)
+        innov = sigma_theta * z_theta + season_jump
+    else:
+        innov = sigma_theta * z_theta
 
+    # theta_full via pytensor.scan instead of the closed-form rho-power-
+    # matrix trick -- rho_powers (a large static triangular, mostly-zero
+    # constant) kept triggering the same FGRAPH.REPLACE crash regardless of
+    # how the surrounding code was written, since pytensor's own optimizer
+    # was rewriting the resulting tensordot internally. scan avoids the
+    # triangular constant entirely.
+    #
+    # recursion: theta_full[:, 0] = theta_init
+    #            theta_full[:, t] = rho * theta_full[:, t-1] + innov[:, t-1]
+    # (verified against the closed-form construction in a standalone numpy
+    # script -- identical to float precision.)
+    def _ar_step(innov_t, theta_prev, rho):
+        return rho * theta_prev + innov_t
 
-check_players = sample_check_coords(train, 'player')
-check_tenure = pl.from_records(coords['tenure']).sample(3)['column_0']
-az.plot_ess_evolution(idata_ar, var_names=['player_skill'],
-                       coords={'player': check_players, 'tenure': check_tenure})
+    innov_seq = innov.T  # (T-1, group_dim) -- scan iterates over axis 0
 
-check_opp = sample_check_coords(train, 'opp_team')
-check_global_step = pl.from_records(coords['global_step_full']).sample(5)['column_0']
-az.plot_ess_evolution(idata_ar, var_names=['opp_ar'],
-                       coords={'opp_team': check_opp, 'global_step_full': check_global_step})
-az.plot_ess_evolution(idata_ar, var_names=['opp_theta_init', 'opp_rho', 'opp_sigma_theta'])
+    theta_path, _ = pytensor.scan(
+        fn=_ar_step,
+        sequences=[innov_seq],
+        outputs_info=[theta_init],
+        non_sequences=[rho],
+        strict=True,
+    )  # (T-1, group_dim) -- steps t=1..T-1
 
-check_player_seasons = sample_check_coords(train, 'player_season')
-check_week = pl.from_records(coords['week']).sample(4)['column_0']  # still used by hs_version/team_mod below
-az.plot_ess_evolution(idata_ar, var_names=['recent_form'],
-                       coords={'player_season': check_player_seasons})
-az.plot_ess_evolution(idata_ar, var_names=['form_sigma'])
+    theta_full = pt.concatenate([theta_init[None, :], theta_path], axis=0).T  # (group_dim, T)
 
-az.plot_ppc_dist(idata_ar, kind='ecdf')
-az.plot_ppc_dist(idata_ar, num_samples=100)
-az.plot_energy(idata_ar)
-
-
-# ============================================================================
-# hs_version -- LKJ-correlated position intercept + age slope + opp_ar
-# ============================================================================
-# Statistically tied with ar_mod on held-out CRPS/RMSE (see module
-# docstring). Kept since it's not clearly worse and calibrates slightly
-# better; not the model to invest further complexity in until team_mod
-# settles whether own-team quality is worth adding.
-
-hs_version = models.build_hs_version(D, coords, season_offsets, T, boundary_cols,
-                                      position_of_player, position_group_counts, week_grid_vals)
-
-
-
-
-
-id_hs = fit_and_diagnose(hs_version, 'hs')
-id_hs = fit_and_diagnose(hs_version, 'hs', prior_check_only=False)
-
-
-az.rcParams['plot.max_subplots'] = 60
-
-
-az.plot_ess_evolution(
-        id_hs, var_names=[rv.name for rv in hs_version.free_RVs if rv.size.eval() <= 10]
+    strength = pm.Deterministic(
+        f'{prefix}_ar',
+        theta_full - pt.mean(theta_full, axis=0, keepdims=True),
+        dims=(group_dim, 'global_step_full'),
     )
+    return strength[group_idx_data, global_time_data]
 
-check_players = sample_check_coords(train, 'player')
-check_tenure = pl.from_records(coords['tenure']).sample(3)['column_0']
+#coords['variance_block'] = ['linear', 'context', 'team_form']
+coords['linear_vars'] = list(cont_dat_train.columns) + list(binary_train.columns)
+coords['team_form_vars'] = ['team_form', 'opp_team_form']
+coords['global_step'] = list(range(T - 1))
+coords['global_step_full'] = list(range(T))
+coords['season_gap'] = list(range(n_seasons - 1))
+coords['pos_param'] = ['positions_mu', 'age_slope']
 
-az.plot_ess_evolution(id_hs, var_names=['player_skill'],
-                       coords={'player': check_players, 'tenure': check_tenure})
-az.plot_ess_evolution(id_hs, var_names=['ab_position'])
+with pm.Model(coords=coords) as r2d2:
+    dat = base_data(D, season_offsets)
+    tenure_z_data = pm.Data('tenure_z_data', D['tenure_z'])
+    intercepts = models.add_lkj_position_intercept(dat['position_data'], tenure_z_data, eta=4)
 
-az.plot_ess_evolution(id_hs, var_names=['recent_form'],
-                       coords={'player_season': check_player_seasons, 'week': check_week})
-az.plot_ess_evolution(id_hs, var_names=['form_ell', 'form_eta'])
+    # Independent scale priors per block, centered on the estimates that
+    # already converged cleanly (r_hat=1.00) every time each block's own
+    # scale was estimated in isolation, before being forced to compete for
+    # a shared, hard-constrained R2 budget -- see this file's history for
+    # why the shared-budget version was abandoned (a real, persistent
+    # ridge that just relocated between whichever two blocks were left
+    # sharing a Dirichlet, not a fixable parameterization bug).
+    linear_scale    = pm.Gamma('linear_scale', mu=0.55, sigma=0.15)
+    career_scale    = pm.Gamma('career_scale', mu=2.6, sigma=0.5)
+    opp_scale       = pm.Gamma('opp_scale', mu=1.8, sigma=0.4)
+    team_form_scale = pm.Gamma('team_form_scale', mu=1.8, sigma=0.4)
 
-# getting rid of these just because the storing these can cause the session to crash? 
-del id_hs, idata_ar
-# ============================================================================
-# team_mod -- ar_mod + a partially-pooled, time-FLAT per-team offensive-
-# environment effect. See src/models.py's build_team_mod docstring for why:
-# neither ar_mod nor hs_version ever use `team_idx` (the player's own
-# team) in mu -- only the OPPONENT's defensive quality is modeled
-# (roll_avg_points_allowed_z, opp_ar). This is the simplest possible test
-# of whether the player's own team's quality matters at all.
-#
-# Uses the LKJ position-intercept structure (same as hs_version) purely
-# because that's what was already built when this model was added; the
-# team-quality question and the position-intercept-structure question are
-# independent, so this isn't an endorsement of LKJ over flat.
+    # linear block: R2D2M2CP still does its own internal decomposition
+    # across these columns -- the one part of this machinery that's
+    # actually earned its complexity, clean r_hat/ESS on every run.
+    design = pt.concatenate([dat['cont_data'], dat['bi_data']], axis=1)
+    input_sigma = np.concatenate([
+        cont_dat_train.std().to_numpy().flatten(),
+        binary_train.std().to_numpy().flatten(),
+    ])
+    _, linear_beta = pmx.R2D2M2CP(
+        'linear_effects', output_sigma=linear_scale, input_sigma=input_sigma,
+        dims='linear_vars', r2=0.5, r2_std=0.2,
+    )
+    f_linear = pt.dot(design, linear_beta)
 
-team_mod = models.build_team_mod(D, coords, season_offsets, T, boundary_cols,
-                                  position_of_player, position_group_counts)
+    player_skill = add_player_skill(position_of_player, total_scale=career_scale)
+    f_career = player_skill[dat['player_data'], dat['tenure_data']]
+
+    f_opp = add_strength_ar('opp', 'opp_team', dat['opp_team_data'],
+                            dat['global_time_data'], total_scale=opp_scale)
+
+    team_form_data = pm.Data('team_form_data', D['team_form_z'])
+    opp_form_data = pm.Data('opp_form_data', D['opp_team_form_z'])
+    tf_design = pt.stack([team_form_data, opp_form_data], axis=-1)
+    _, team_form_beta = pmx.R2D2M2CP(
+        'team_form_effects', output_sigma=team_form_scale,
+        input_sigma=np.array([1.0, 1.0]), dims='team_form_vars',
+        r2=0.5, r2_std=0.2,
+    )
+    f_team_form = pt.dot(tf_design, team_form_beta)
+
+    mu = intercepts + f_linear + f_career + f_opp + f_team_form
+
+    sigma_obs = pm.HalfNormal('sigma_obs', 2.5, dims='position')
+    models.add_role_mixture(mu, sigma_obs, dat['position_data'],
+                             dat['games_missed_data'], dat['snap_pct_data'], dat['obs_data'])
 
 
-id_team = fit_and_diagnose(team_mod, 'team')
-### probably need to bump the sampling up
-id_team = fit_and_diagnose(team_mod, 'team_mod', prior_check_only=False)
+id_rd = fit_and_diagnose(r2d2, 'id_rd', samps = 50)
 
-id_team.sample_stats['diverging'].sum().item()
+id_rd = fit_and_diagnose(r2d2, 'id_rd', prior_check_only=False, target_accept=0.95)
 
-az.rcParams['plot.max_subplots'] = 60
+az.rcParams['plot.max_subplots'] =60
 
 az.plot_ess_evolution(
-    id_team,
-    var_names=[rv.name for rv in team_mod.free_RVs if rv.size.eval() <= 10]
+    id_rd ,
+    var_names=[rv.name for rv in r2d2.free_RVs if rv.size.eval() <= 10]
 )
-az.plot_ess_evolution(id_team, var_names=['beta_team_form', 'beta_opp_team_form'])
 
 
-# ============================================================================
-# Model comparison
-# ============================================================================
-idata_ar = az.from_netcdf('model-nc/ff_ar.nc')
-id_hs = az.from_netcdf('model-nc/ff_hs.nc')
-id_team = az.from_netcdf('model-nc/ff_team.nc')
+az.plot_ess_evolution(
+    id_rd, 
+    var_names=['linear_scale', 'career_scale', 'opp_scale', 'team_form_scale']
+)
+
+az.summary(id_rd, var_names=['linear_scale', 'career_scale', 'opp_scale', 'team_form_scale'])[['mean','sd','ess_bulk','ess_tail','r_hat']]
+
+az.plot_ppc_dist(
+    id_rd, num_samples=100
+)
 
 
-## one run of the comparisions had observations in the log likelihood that prevented comparision
-for name, idata in {'ar_mod': idata_ar, 'hs_version': id_hs, 'team_mod': id_team}.items():
-    ll = idata.log_likelihood['y_obs'].values
-    n_nan = np.isnan(ll).sum()
-    n_inf = np.isinf(ll).sum()
-    print(f"{name}: shape={ll.shape} nan={n_nan} inf={n_inf}")
-    if n_nan or n_inf:
-        bad_obs = np.where(np.isnan(ll).any(axis=(0, 1)) | np.isinf(ll).any(axis=(0, 1)))[0]
-        print(f"  {len(bad_obs)} distinct observations affected, e.g. indices: {bad_obs[:10]}")
-
-az.compare({
-    'ar_mod': idata_ar,
-    'hs_version': id_hs,
-    'team_mod': id_team,
-
-})
-
-for name, idata in {'ar_mod': idata_ar, 'hs_version': id_hs,
-                     'team_mod': id_team, }.items():
-    print(f"\n{name}")
-    print(az.loo(idata, pointwise=True))

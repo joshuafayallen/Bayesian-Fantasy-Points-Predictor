@@ -14,6 +14,14 @@ for what each architecture is) on held-out weekly accuracy:
                          src/estimate_latent_ability.py's standalone
                          Bradley-Terry-style state-space fit on real game
                          scores.
+    r2d2  r2d2_mod   -- same features/structure as team_mod, but with
+                         R2D2M2CP priors (pymc_extras) on the linear_effects
+                         and team_form_effects blocks, and independent
+                         empirically-centered Gamma total-scale priors on
+                         the career/opp blocks instead of team_mod's plain
+                         HalfNormal sub-priors. See models.build_r2d2_mod's
+                         docstring for why career/opp are NOT also folded
+                         into a shared R2D2 budget.
 
 `team_season_mod` (a season-level AR(1) team-quality version) is wired up
 here (build_team_season_mod, via src/models.py) but NOT in the CLI
@@ -100,6 +108,14 @@ DATA_PATH = "processed-data/ff-processed.parquet"   # run from the project root
 TEAM_FORM_PATH = "processed-data/team_form.parquet"  # from src/estimate_latent_ability.py
 RESULTS_CSV = "results/backtest_walkforward.csv"
 WINDOW_SEASONS = 3   # how many seasons of history to feed each fold
+MAX_WEEK = 18   # NFL schedule's full week range (17 through 2020, 18 since
+                # the 2021 expansion) -- see Fold.__init__: `week`'s enum is
+                # pinned to this full range rather than fit from whatever
+                # weeks happen to appear in a fold's windowed train, so a
+                # fold can't treat its own test week as an out-of-vocabulary
+                # "cold start" just because no prior season is in the window
+                # yet (e.g. every fold in the dataset's first season, 2013,
+                # under WINDOW_SEASONS=3).
 
 # games_missed_ytd/lag_offense_pct/lag_st_pct match src/ff_ar.py's
 # std_these -- these feed add_role_mixture's p_full logit, used by every
@@ -129,6 +145,23 @@ class Fold:
     def __init__(self, train, idx_cols):
         self.idx_cols = idx_cols
         self.enums = models.make_enums(train, idx_cols)
+        if 'week' in idx_cols:
+            # `week` is a bounded, known-in-advance index (1..MAX_WEEK), not
+            # an open-ended category -- make_enums' default (whatever values
+            # happen to appear in this fold's train slice) breaks down
+            # whenever train can't yet see the full week range (no prior
+            # season in the window, e.g. every fold in the dataset's first
+            # season under WINDOW_SEASONS=3): the test week is then
+            # guaranteed absent from train's vocabulary -- train only has
+            # week < test_week by construction -- so drop_cold_starts used
+            # to drop 100% of the test set even though nothing was actually
+            # a genuinely new player/team. Pinning the vocabulary to the
+            # full range fixes that, and also keeps week_idx exactly equal
+            # to week - 1 (which global_time's
+            # season_offsets[:-1][season_idx] + week_idx arithmetic depends
+            # on) instead of depending on the incidental sort order of
+            # whichever weeks happen to be present.
+            self.enums['week'] = pl.Enum([str(float(w)) for w in range(1, MAX_WEEK + 1)])
         self.scalers = models.fit_scalers(train, STD_COLS)
         self.coords = {c: e.categories.to_list() for c, e in self.enums.items()}
         self.coords['cont_vars'] = STD_COLS
@@ -228,6 +261,18 @@ def fit_predict(model_name, method, df_train, df_test, seed=0,
                  advi_n=20000, advi_draws=500,
                  nuts_draws=300, nuts_tune=300, nuts_chains=2):
     fold = Fold(df_train, IDX_COLS)
+
+    # Cold-start check moved ahead of model construction/fitting -- it used
+    # to run only after a full NUTS/ADVI fit completed, wasting the entire
+    # fit whenever a fold turned out to be all-cold (see the week-vocabulary
+    # fix above, written for exactly this: every fold in season 2013 was
+    # silently all-cold and burning a full fit before being discarded).
+    # Checking here means a doomed fold is caught in milliseconds instead.
+    keep = fold.drop_cold_starts(df_test)
+    n_dropped = len(df_test) - len(keep)
+    if len(keep) == 0:
+        return None
+
     Dtr = fold.arrays(df_train)
     n_positions = len(fold.coords['position'])
     pos_of_player, pos_counts = models.player_position_map(
@@ -252,6 +297,8 @@ def fit_predict(model_name, method, df_train, df_test, seed=0,
                                            pos_of_player, pos_counts),
         'team': lambda: models.build_team_mod(Dtr, fold.coords, season_offsets, T, boundary_cols,
                                                pos_of_player, pos_counts),
+        'r2d2': lambda: models.build_r2d2_mod(Dtr, fold.coords, season_offsets, T, boundary_cols,
+                                               pos_of_player, pos_counts),
         'team_season': lambda: models.build_team_season_mod(Dtr, fold.coords, season_offsets, T, boundary_cols,
                                                               pos_of_player, pos_counts),
     }
@@ -265,13 +312,8 @@ def fit_predict(model_name, method, df_train, df_test, seed=0,
         else:
             idata = pm.sample(draws=nuts_draws, tune=nuts_tune, chains=nuts_chains,
                                cores=nuts_chains, random_seed=seed, progressbar=False,
-                               target_accept=0.9)
+                               target_accept=0.99)
     fit_time = time.time() - t0
-
-    keep = fold.drop_cold_starts(df_test)
-    n_dropped = len(df_test) - len(keep)
-    if len(keep) == 0:
-        return None
 
     Dte = fold.arrays(keep)
     with model:
@@ -291,9 +333,9 @@ def fit_predict(model_name, method, df_train, df_test, seed=0,
             'global_time_data': models.global_time(Dte['season'], Dte['week'], season_offsets),
             'obs_data': np.zeros(len(keep)),  # placeholder, not used for y_obs draws
         }
-        if model_name in ('hs', 'team'):  # both use the LKJ position intercept, which needs tenure_z_data
+        if model_name in ('hs', 'team', 'r2d2'):  # all three use the LKJ position intercept, which needs tenure_z_data
             set_data['tenure_z_data'] = Dte['tenure_z']
-        if model_name == 'team':  # team_form/opp_team_form only exist for team_mod
+        if model_name in ('team', 'r2d2'):  # team_form/opp_team_form only exist for team_mod/r2d2_mod
             set_data['team_form_data'] = Dte['team_form_z']
             set_data['opp_team_form_data'] = Dte['opp_team_form_z']
         pm.set_data(set_data)
@@ -399,29 +441,45 @@ def fit_predict_baseline(df_train, df_test):
 
 # ------------------------------------------------------------------ main
 
-def already_done(out_csv, model_name, method, season, week):
-    """True if this exact (model, method, season, week) fold is already a row
-    in out_csv -- lets a sweep be re-run/resumed without silently duplicating
-    folds (same seed + same data => bit-identical metrics, just a wasted
-    refit and a double-counted row in any later aggregation)."""
+def already_done(out_csv, model_name, method, season, week, shrunk=False):
+    """True if this exact (model, method, season, week, shrunk) fold is
+    already a row in out_csv -- lets a sweep be re-run/resumed without
+    silently duplicating folds (same seed + same data => bit-identical
+    metrics, just a wasted refit and a double-counted row in any later
+    aggregation). shrunk is part of the dedup key so a plain and a shrunk
+    run of the same (model, season, week) don't collide -- they're
+    genuinely different fits, not the same fold rerun."""
     import os
     if not os.path.exists(out_csv):
         return False
     existing = pl.read_csv(out_csv)
+    if 'shrunk' not in existing.columns:
+        # a CSV written before --shrunk existed -- every row in it is
+        # implicitly a plain-features run.
+        existing = existing.with_columns(pl.lit(False).alias('shrunk'))
     match = existing.filter(
         (pl.col('model') == model_name) & (pl.col('method') == method) &
-        (pl.col('season') == season) & (pl.col('week') == week)
+        (pl.col('season') == season) & (pl.col('week') == week) &
+        (pl.col('shrunk') == shrunk)
     )
     return match.height > 0
 
 
-def run_one_fold(model_name, method, season, week, out_csv=RESULTS_CSV, stack_weights=(0.58, 0.29, 0.13), **kwargs):
-    if already_done(out_csv, model_name, method, season, week):
-        print(f"SKIP: {model_name} {method} {season} wk{week} already in {out_csv}")
+def run_one_fold(model_name, method, season, week, out_csv=RESULTS_CSV, stack_weights=(0.58, 0.29, 0.13),
+                  shrunk=False, **kwargs):
+    if already_done(out_csv, model_name, method, season, week, shrunk=shrunk):
+        print(f"SKIP: {model_name} {method} {season} wk{week} shrunk={shrunk} already in {out_csv}")
         return
 
     df = pl.read_parquet(DATA_PATH)
-    if model_name in ('team', 'stack'):
+    if shrunk:
+        # same swap src/fit_model.py's --shrunk uses (models.py's shared
+        # helper) -- left-joins processed-data/shrinkage_features.csv and
+        # overwrites SHRUNK_SWAP_COLS's VALUES in place, so STD_COLS's
+        # column NAMES (and therefore Fold's cont_vars coord) are
+        # unchanged either way; only the row's actual lag values differ.
+        df = models.apply_shrunk_features(df)
+    if model_name in ('team', 'stack', 'r2d2'):
         # same construction as src/ff_ar.py's top-of-file join: own-team
         # form keyed on (season, week, team), opponent form re-keyed on
         # (season, week, opp_team). Row-count assertions guard against the
@@ -473,7 +531,7 @@ def run_one_fold(model_name, method, season, week, out_csv=RESULTS_CSV, stack_we
     y = r['keep']['total_fantasy_points'].to_numpy()
     base = past_only_baseline(r['keep'], train)
     m = score(y, r['S'], baseline=base)
-    m.update(model=model_name, method=method, season=season, week=week,
+    m.update(model=model_name, method=method, season=season, week=week, shrunk=shrunk,
              fit_time=r['fit_time'], n_train=r['n_train'], n_dropped=r['n_dropped'])
     print(json.dumps(m, indent=2))
 
@@ -491,7 +549,7 @@ if __name__ == '__main__':
     # team_season left out of the default choices since it's not in
     # src/ff_ar.py's current active model set -- pass model_name=
     # 'team_season' to fit_predict() directly if you deliberately want it.
-    p.add_argument('model', choices=['hs', 'ar', 'team', 'stack', 'baseline'])
+    p.add_argument('model', choices=['hs', 'ar', 'team', 'r2d2', 'stack', 'baseline'])
     p.add_argument('method', choices=['advi', 'nuts'])
     p.add_argument('season', type=int)
     p.add_argument('week', type=float)
@@ -504,6 +562,9 @@ if __name__ == '__main__':
     p.add_argument('--out', type=str, default=RESULTS_CSV)
     p.add_argument('--stack-weights', type=str, default='0.58,0.29,0.13',
                     help="comma-separated 'team,hs,ar' weights for model=stack, e.g. from az.compare()'s weight column")
+    p.add_argument('--shrunk', action='store_true',
+                    help="fit with the shrinkage_features.csv-derived shrunk lag columns instead of the plain lags "
+                         "(models.SHRUNK_SWAP_COLS) -- same feature swap as src/fit_model.py's --shrunk")
     args = p.parse_args()
 
     stack_weights = tuple(float(x) for x in args.stack_weights.split(','))
@@ -511,6 +572,7 @@ if __name__ == '__main__':
     run_one_fold(args.model, args.method, args.season, args.week,
                  out_csv=args.out,
                  stack_weights=stack_weights,
+                 shrunk=args.shrunk,
                  seed=args.seed,
                  advi_n=args.advi_n, advi_draws=args.advi_draws,
                  nuts_draws=args.nuts_draws, nuts_tune=args.nuts_tune,

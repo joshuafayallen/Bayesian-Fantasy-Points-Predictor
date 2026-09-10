@@ -4,6 +4,8 @@ import polars.selectors as cs
 
 keep_vegas = ['game_id', 'season','away_team', 'away_score', 'home_team', 'home_score', 'away_rest', 'home_rest', 'total_line', 'spread_line', 'is_grass', 'is_indoors', 'div_game', 'wind_clean', 'temp_clean']
 
+
+
 raw_vegas = (
     nfl.load_schedules(seasons = True).filter(
     (pl.col('season').is_between(2006, 2025)) &
@@ -30,6 +32,13 @@ raw_vegas = (
         .then(pl.lit(0))
         .when(pl.col('wind').is_null())
         .then(pl.lit(8))
+        ## there were two values with 70 mph miles per hour
+        ## so we are just going to hand correct them
+        ## the data for those games were found on PFR 
+        .when(pl.col('game_id') == '2016_13_NYG_PIT')
+        .then(7)
+        .when(pl.col('game_id') == '2008_02_TEN_CIN')
+        .then(13)
         .otherwise(pl.col('wind'))
         .alias('wind_clean')
     )
@@ -37,9 +46,9 @@ raw_vegas = (
     .rename({'temp_clean': 'temp', 'wind_clean': 'wind'})
 )
 
+raw_vegas.filter(pl.col('wind') == pl.col('wind').max())
+
 pos = ['TE', 'RB', 'FB', 'QB', 'WR']
-
-
 
 
 raw_rosters = (
@@ -170,7 +179,10 @@ make_covariate = (
         pl.col('pass_completions').sum().over(['team', 'game_id']).alias('total_completions')
     )
     .with_columns(
-        (pl.col('rush_yards_gained')/pl.col('rush_attempt_total')).alias('yards_per_rush_attempt'),
+        pl.when(pl.col('rush_attempt') > 0)
+        .then(pl.col('rush_yards_gained') / pl.col('rush_attempt'))
+        .otherwise(None)
+        .alias('yards_per_rush_attempt'),
         pl.when(pl.col('rec_attempt_total') > 0)
         .then(pl.col('rec_attempt') / pl.col('rec_attempt_total'))
         .otherwise(None)

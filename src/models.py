@@ -36,8 +36,49 @@ import numpy as np
 import polars as pl
 import polars.selectors as cs
 import pymc as pm
+import pymc_extras as pmx
 import pytensor
 import pytensor.tensor as pt
+
+# processed-data/shrinkage_features.csv has `_shrunk` variants for exactly
+# these three lag-rate columns (a partial-pooling shrinkage estimate,
+# computed separately in src/estimate_latent_ability.py-adjacent tooling).
+# lag_target_share has no shrunk variant and is intentionally left out.
+# Both src/fit_model.py and src/backtest_harness.py's --shrunk path share
+# this single list/helper rather than each hand-rolling their own swap, so
+# "which columns count as shrinkable" can't drift between the two.
+SHRINKAGE_PATH = 'processed-data/shrinkage_features.csv'
+SHRUNK_SWAP_COLS = ['lag_yards_per_rush_attempt', 'lag_yards_per_target', 'lag_yards_per_pass_attempt']
+
+
+def apply_shrunk_features(df, swap_cols=SHRUNK_SWAP_COLS, path=SHRINKAGE_PATH):
+    """Left-join processed-data/shrinkage_features.csv onto `df` (keyed on
+    player_id/season/week) and overwrite each column in `swap_cols` with
+    its `_shrunk` counterpart, falling back to the original (unshrunk)
+    value via pl.coalesce for any row shrinkage_features.csv doesn't cover
+    (rather than dropping it or leaving a null). Left-joined + coalesce
+    instead of inner-joined so a coverage gap shows up as a printed
+    warning and a graceful fallback, not silently dropped rows -- an
+    earlier version of this join (in what's now src/r2d2_mod.py) used a
+    bare inner join, which is exactly the bug this fixes.
+
+    Column NAMES are unchanged (still e.g. 'lag_yards_per_rush_attempt')
+    -- this overwrites those columns' VALUES in place, so a caller's
+    existing std_these/STD_COLS list works unmodified whether or not
+    shrinkage was applied; only the caller's own record-keeping (e.g.
+    idata.attrs['shrunk'] in src/fit_model.py) distinguishes the two."""
+    shrunk_estimates = pl.read_csv(path).select(
+        'player_id', 'season', 'week', cs.ends_with('_shrunk'))
+    n0 = df.height
+    out = df.join(shrunk_estimates, on=['player_id', 'season', 'week'], how='left')
+    assert out.height == n0, f"shrinkage_features join fanned out rows: {n0} -> {out.height}"
+    n_missing = out[f'{swap_cols[0]}_shrunk'].null_count()
+    if n_missing:
+        print(f"warning: {n_missing} rows have no shrinkage_features match -- "
+              f"falling back to the plain (unshrunk) lag value for those rows")
+    for col in swap_cols:
+        out = out.with_columns(pl.coalesce([f'{col}_shrunk', col]).alias(col))
+    return out.drop([f'{col}_shrunk' for col in swap_cols])
 
 
 # ============================================================================
@@ -215,15 +256,29 @@ def base_data(D, season_offsets):
 # Every function below must be called inside an active `with pm.Model(...):`
 # context.
 
-def add_player_skill(coords, position_of_player, position_group_counts, n_positions):
+def add_player_skill(coords, position_of_player, position_group_counts, n_positions, total_scale=None):
     """The random-walk-over-tenure player_skill term, hard-centered to zero
     mean within each position at every tenure level. Without this
     centering, positions_mu/ab_position and the average starting level of
     player_skill within a position are redundant, which tanks the
-    position-level parameters' ESS."""
+    position-level parameters' ESS.
+
+    total_scale=None (default): init_sigma/rw_sigma are independent
+    HalfNormal priors, as used by ar_mod/hs_version/team_mod.
+    total_scale=<scalar tensor>: init_sigma/rw_sigma are instead a Beta-
+    distributed split of a caller-supplied total variance budget (used by
+    r2d2_mod's build_r2d2_mod) -- e.g. a scale derived from an R2D2M2CP-
+    style decomposition. init_sigma^2 + rw_sigma^2 == total_scale^2 either
+    way, just with the split itself estimated (career_shape) instead of
+    the two amplitudes being independently free."""
     n_tenure = len(coords['tenure'])
-    init_sigma = pm.HalfNormal('init_sigma', 4.0)
-    rw_sigma = pm.HalfNormal('rw_sigma', 0.5)
+    if total_scale is None:
+        init_sigma = pm.HalfNormal('init_sigma', 4.0)
+        rw_sigma = pm.HalfNormal('rw_sigma', 0.5)
+    else:
+        career_shape = pm.Beta('career_shape', 2, 2)
+        init_sigma = total_scale * pt.sqrt(career_shape)
+        rw_sigma = total_scale * pt.sqrt(1 - career_shape)
     z_innov = pm.Normal('z_innov', 0, 1, dims=('player', 'tenure'))
     level0 = init_sigma * z_innov[:, 0]
     steps = rw_sigma * z_innov[:, 1:]  # (player, n_tenure - 1)
@@ -270,13 +325,24 @@ def add_player_skill(coords, position_of_player, position_group_counts, n_positi
     )
 
 
-def add_strength_ar(prefix, group_dim, group_idx_data, global_time_data, T, boundary_cols):
+def add_strength_ar(prefix, group_dim, group_idx_data, global_time_data, T, boundary_cols, total_scale=None):
     """Continuous non-centered AR(1)-with-season-jumps strength curve over
     `group_dim` (e.g. 'opp_team') across the full weekly timeline. Used for
-    opp_ar in every model."""
-    rho          = pm.Beta(f'{prefix}_rho', 4, 2)
-    sigma_theta  = pm.HalfNormal(f'{prefix}_sigma_theta', 1.0)
-    sigma_season = pm.HalfNormal(f'{prefix}_sigma_season', 1.0)
+    opp_ar in every model.
+
+    total_scale=None (default): sigma_theta/sigma_season are independent
+    HalfNormal priors, as used by ar_mod/hs_version/team_mod.
+    total_scale=<scalar tensor>: sigma_theta/sigma_season are instead a
+    Beta-distributed split of a caller-supplied total variance budget
+    (used by r2d2_mod's build_r2d2_mod)."""
+    rho = pm.Beta(f'{prefix}_rho', 4, 2)
+    if total_scale is None:
+        sigma_theta  = pm.HalfNormal(f'{prefix}_sigma_theta', 1.0)
+        sigma_season = pm.HalfNormal(f'{prefix}_sigma_season', 1.0)
+    else:
+        ar_shape = pm.Beta(f'{prefix}_shape', 2, 2)
+        sigma_theta  = total_scale * pt.sqrt(ar_shape)
+        sigma_season = total_scale * pt.sqrt(1 - ar_shape)
     theta_init   = pm.Normal(f'{prefix}_theta_init', 0, 1, dims=group_dim)
     z_theta = pm.Normal(f'{prefix}_z_theta', 0, 1, dims=(group_dim, 'global_step'))
     z_eta   = pm.Normal(f'{prefix}_z_eta', 0, 1, dims=(group_dim, 'season_gap'))
@@ -408,7 +474,7 @@ def add_flat_position_intercept(position_data):
     return pm.Deterministic('intercepts', positions_mu[position_data])
 
 
-def add_lkj_position_intercept(position_data, tenure_z_data, eta=4):
+def add_lkj_position_intercept(position_data, tenure_z_data, eta=6):
     """Correlated varying effects across position: baseline scoring level
     and a linear tenure/age slope, drawn jointly per position via an
     LKJ-correlated covariance -- McElreath's "varying slopes" cafes
@@ -535,7 +601,7 @@ def build_ar_mod(D, coords, season_offsets, T, boundary_cols,
         mu = intercepts + pm.math.dot(dat['cont_data'], cont_priors) + pm.math.dot(dat['bi_data'], bi_priors) \
             + f_career + f_opp + f_form
 
-        sigma_obs = pm.HalfNormal('sigma_obs', 5.0, dims='position')
+        sigma_obs = pm.HalfNormal('sigma_obs', 3.0, dims='position')
         add_role_mixture(mu, sigma_obs, dat['position_data'],
                           dat['games_missed_data'], dat['snap_pct_data'], dat['obs_data'])
     return model
@@ -568,7 +634,7 @@ def build_hs_version(D, coords, season_offsets, T, boundary_cols,
         mu = intercepts + pm.math.dot(dat['cont_data'], cont_priors) + pm.math.dot(dat['bi_data'], bi_priors) \
             + f_career + f_opp + f_form
 
-        sigma_obs = pm.HalfNormal('sigma_obs', 5.0, dims='position')
+        sigma_obs = pm.HalfNormal('sigma_obs', 2.5, dims='position')
         add_role_mixture(mu, sigma_obs, dat['position_data'],
                           dat['games_missed_data'], dat['snap_pct_data'], dat['obs_data'])
     return model
@@ -593,7 +659,7 @@ def build_team_mod(D, coords, season_offsets, T, boundary_cols,
     with pm.Model(coords=coords) as model:
         dat = base_data(D, season_offsets)
         tenure_z_data = pm.Data('tenure_z_data', D['tenure_z'])
-        intercepts = add_lkj_position_intercept(dat['position_data'], tenure_z_data)
+        intercepts = add_lkj_position_intercept(dat['position_data'], tenure_z_data, eta=4)
 
         cont_priors = pm.Normal('cont_priors', 0, 1, dims='cont_vars')
         bi_priors = pm.Normal('bi_priors', 0, 1.5, dims='binary_vars')
@@ -611,7 +677,111 @@ def build_team_mod(D, coords, season_offsets, T, boundary_cols,
         mu = intercepts + pm.math.dot(dat['cont_data'], cont_priors) + pm.math.dot(dat['bi_data'], bi_priors) \
             + f_career + f_opp + f_team_form
 
-        sigma_obs = pm.HalfNormal('sigma_obs', 5.0, dims='position')
+        sigma_obs = pm.HalfNormal('sigma_obs', 2.5, dims='position')
+        add_role_mixture(mu, sigma_obs, dat['position_data'],
+                          dat['games_missed_data'], dat['snap_pct_data'], dat['obs_data'])
+    return model
+
+
+def build_r2d2_mod(D, coords, season_offsets, T, boundary_cols,
+                    position_of_player, position_group_counts):
+    """r2d2 -- same features/structure as team_mod (LKJ intercept +
+    opponent-strength AR(1) + team_form/opp_team_form regression), but with
+    a more defensible/empirically-informed prior structure:
+
+    - linear_effects (the 11 continuous + 5 binary covariates) and
+      team_form_effects (beta_team_form/beta_opp_team_form) go through
+      pmx.R2D2M2CP, which puts a prior directly on variance-explained (r2)
+      for that block and decomposes it across the block's coefficients via
+      an internal Dirichlet. Both are genuinely linear-in-coefficients
+      blocks, which is exactly what R2D2M2CP is for.
+    - career (player_skill's random walk) and opp (opp_team's AR(1)) are
+      NOT linear-coefficient blocks -- they're structurally different
+      (a random walk, an AR(1) process), and an earlier attempt to fold
+      them into R2D2M2CP's shared-Dirichlet-variance-budget alongside
+      linear/team_form produced a real, confirmed ridge (r_hat 1.03-1.07
+      on R2/block_share, resolved via az.plot_pair showing a genuine
+      negative-correlation ridge between block_share components -- a
+      multiplicative tie between two simplex/positive-valued parents).
+      Instead they get independent, informatively-centered Gamma total-
+      scale priors, split internally into their two sub-components
+      (init_sigma/rw_sigma for career, sigma_theta/sigma_season for opp)
+      via add_player_skill/add_strength_ar's total_scale= argument. The
+      Gamma centers below (career~2.6, opp~1.8) are the values those two
+      terms converged to cleanly when *not* forced to share a budget with
+      anything else.
+
+    r2/r2_std for the two R2D2M2CP blocks are set from the baseline
+    model's pooled backtest R^2 (~0.30-0.37 across folds; see
+    results/backtest_walkforward.csv) as a pilot-data-informed prior on
+    how much of the outcome variance a purely-linear signal plausibly
+    explains -- not a claim that this exact fold will hit that number.
+
+    Requires D['team_form_z'] / D['opp_team_form_z'], same as team_mod."""
+    n_positions = len(coords['position'])
+    n_seasons = len(coords['season'])
+    coords = _extend_coords(coords, T, n_seasons, pos_param=True)
+    coords.setdefault('linear_vars', coords['cont_vars'] + coords['binary_vars'])
+    coords.setdefault('team_form_vars', ['team_form', 'opp_team_form'])
+
+    with pm.Model(coords=coords) as model:
+        dat = base_data(D, season_offsets)
+        tenure_z_data = pm.Data('tenure_z_data', D['tenure_z'])
+        intercepts = add_lkj_position_intercept(dat['position_data'], tenure_z_data, eta=4)
+
+        # -- linear_effects: R2D2M2CP over the 11 cont + 5 binary covariates
+        design = pt.concatenate([dat['cont_data'], dat['bi_data']], axis=1)
+        input_sigma = np.concatenate([
+            np.asarray(D['cont']).std(axis=0),
+            np.asarray(D['bi']).std(axis=0),
+        ])
+        # floor any zero-variance column to 1.0 instead of feeding
+        # R2D2M2CP a literal 0 -- same convention as fit_scalers' sd
+        # flooring. A windowed backtest fold can genuinely have a constant
+        # binary_vars column (e.g. 'era' is often a single value within a
+        # short WINDOW_SEASONS slice) even though it's never constant over
+        # full history; R2D2M2CP's internal decomposition divides by
+        # input_sigma, so a literal 0 here produces inf/nan at every
+        # initialization point (nutpie's "All initialization points
+        # failed" / ErrorCode(3)). A column that's constant within this
+        # fold carries zero within-fold signal either way -- R2D2M2CP has
+        # nothing to identify that coefficient from regardless of what
+        # input_sigma says, so flooring it to 1.0 just avoids the
+        # division-by-zero without changing what the model can actually
+        # learn from that column in this fold.
+        input_sigma = np.where(input_sigma > 0, input_sigma, 1.0)
+        linear_scale = pm.Gamma('linear_scale', mu=2.0, sigma=1.0)
+        _, linear_beta = pmx.R2D2M2CP(
+            'linear_effects', output_sigma=linear_scale, input_sigma=input_sigma,
+            dims='linear_vars', r2=0.35, r2_std=0.08,
+        )
+        f_linear = pt.dot(design, linear_beta)
+
+        # -- career: player_skill random walk, independent Gamma scale
+        career_scale = pm.Gamma('career_scale', mu=2.6, sigma=1.0)
+        player_skill = add_player_skill(coords, position_of_player, position_group_counts,
+                                         n_positions, total_scale=career_scale)
+        f_career = player_skill[dat['player_data'], dat['tenure_data']]
+
+        # -- opp: opponent-strength AR(1), independent Gamma scale
+        opp_scale = pm.Gamma('opp_scale', mu=1.8, sigma=1.0)
+        f_opp = add_strength_ar('opp', 'opp_team', dat['opp_team_data'], dat['global_time_data'],
+                                 T, boundary_cols, total_scale=opp_scale)
+
+        # -- team_form_effects: R2D2M2CP over [team_form, opp_team_form]
+        team_form_data = pm.Data('team_form_data', D['team_form_z'])
+        opp_team_form_data = pm.Data('opp_team_form_data', D['opp_team_form_z'])
+        tf_design = pt.stack([team_form_data, opp_team_form_data], axis=-1)
+        team_form_scale = pm.Gamma('team_form_scale', mu=1.8, sigma=1.0)
+        _, team_form_beta = pmx.R2D2M2CP(
+            'team_form_effects', output_sigma=team_form_scale, input_sigma=np.array([1.0, 1.0]),
+            dims='team_form_vars', r2=0.35, r2_std=0.08,
+        )
+        f_team_form = pt.dot(tf_design, team_form_beta)
+
+        mu = intercepts + f_linear + f_career + f_opp + f_team_form
+
+        sigma_obs = pm.HalfNormal('sigma_obs', 2.5, dims='position')
         add_role_mixture(mu, sigma_obs, dat['position_data'],
                           dat['games_missed_data'], dat['snap_pct_data'], dat['obs_data'])
     return model

@@ -7,9 +7,9 @@ import polars as pl
 import pymc as pm
 import arviz as az
 from scipy.stats import spearmanr
-
+ 
 import models
-
+ 
 DATA_PATH = "processed-data/ff-processed.parquet"   # run from the project root
 TEAM_FORM_PATH = "processed-data/team_form.parquet"  # from src/estimate_latent_ability.py
 RESULTS_CSV = "results/backtest_walkforward.csv"
@@ -22,7 +22,7 @@ MAX_WEEK = 18   # NFL schedule's full week range (17 through 2020, 18 since
                 # "cold start" just because no prior season is in the window
                 # yet (e.g. every fold in the dataset's first season, 2013,
                 # under WINDOW_SEASONS=3).
-
+ 
 # STD_COLS/BINARY_VARS/BART_CONT_VARS/BART_IDX_COLS now live in
 # src/models.py as the single shared copy -- this file used to carry its
 # own hand-copied STD_COLS, and it had already drifted from
@@ -35,19 +35,16 @@ STD_COLS = models.STD_COLS
 BINARY_VARS = models.BINARY_VARS
 BART_CONT_VARS = models.BART_CONT_VARS
 BART_IDX_COLS = models.BART_IDX_COLS
-
+ 
 # 'player_season' (add_recent_form_ar/add_recent_form_hsgp) and 'week'
 # (add_recent_form_hsgp's within-season time axis) match src/ff_ar.py's
 # idx_cols -- every current architecture needs these.
 IDX_COLS = ['player_id', 'position', 'team', 'tenure', 'opp_team', 'season', 'week',
             'player_season']
-
-# het_gp models -> the --positions group each one requires
-HET_MODEL_POSITIONS = {'het_gp': 'skill', 'het_gp_qb': 'qb'}
-
-
+ 
+ 
 # --------------------------------------------------------------- data prep
-
+ 
 class Fold:
     """Encapsulates encoders + coords fit on ONE fold's windowed train
     slice. Produces arrays in exactly the shape src/models.py's build_*
@@ -55,7 +52,7 @@ class Fold:
     week/player_season/cont/bi/y/tenure_z/games_missed_z/snap_pct_z, plus
     team_form_z/opp_team_form_z when available) -- see base_data() and the
     build_* docstrings in src/models.py."""
-
+ 
     def __init__(self, train, idx_cols):
         self.idx_cols = idx_cols
         self.enums = models.make_enums(train, idx_cols)
@@ -114,7 +111,7 @@ class Fold:
         if 'team_form' in train.columns:
             self._team_form_mu = train['team_form'].mean()
             self._team_form_sd = train['team_form'].std() or 1.0
-
+ 
     def arrays(self, frame):
         out = {c: models.idx_array(frame, c, self.enums) for c in self.idx_cols}
         # models.py's build_* functions (via base_data/build_bart_mod) all
@@ -158,7 +155,7 @@ class Fold:
                 BART_CONT_VARS + self.shrunk_add_cols + BINARY_VARS
             ).to_numpy().astype('float64')
         return out
-
+ 
     def drop_cold_starts(self, frame):
         checks = frame.with_columns([
             pl.col(c).cast(pl.String).cast(self.enums[c], strict=False).alias(f"_{c}_chk")
@@ -167,8 +164,8 @@ class Fold:
         keep = checks.drop_nulls([f"_{c}_chk" for c in self.idx_cols]) \
                      .drop([f"_{c}_chk" for c in self.idx_cols])
         return keep
-
-
+ 
+ 
 def ar_calendar(df_train, df_test, season_enum):
     """Per-fold global weekly timeline for opp_ar. One AR step per week
     actually present in df_train (in season order, using this fold's own
@@ -181,7 +178,7 @@ def ar_calendar(df_train, df_test, season_enum):
     shared season_offsets/T/boundary_cols arithmetic to
     models.build_ar_calendar, the same helper src/ff_ar.py's top-level
     calendar derivation uses.
-
+ 
     Assumes df_test is a single (season, week) -- true for this harness's
     one-fold-per-week design."""
     seasons = [int(s) for s in season_enum.categories.to_list()]
@@ -192,19 +189,19 @@ def ar_calendar(df_train, df_test, season_enum):
     test_season = int(df_test['season'][0])
     test_week = float(df_test['week'][0])
     train_max[test_season] = max(train_max.get(test_season, 0.0), test_week)
-
+ 
     weeks_per_season = np.array([train_max.get(s, 0.0) for s in seasons])
     assert (weeks_per_season > 0).all(), "a season has zero weeks in this fold's window"
     return models.build_ar_calendar(weeks_per_season)
-
-
+ 
+ 
 # ------------------------------------------------------------ fit/predict
-
+ 
 def fit_predict(model_name, method, df_train, df_test, seed=0,
                  advi_n=20000, advi_draws=500,
                  nuts_draws=300, nuts_tune=300, nuts_chains=2):
     fold = Fold(df_train, IDX_COLS)
-
+ 
     # Cold-start check moved ahead of model construction/fitting -- it used
     # to run only after a full NUTS/ADVI fit completed, wasting the entire
     # fit whenever a fold turned out to be all-cold (see the week-vocabulary
@@ -215,14 +212,14 @@ def fit_predict(model_name, method, df_train, df_test, seed=0,
     n_dropped = len(df_test) - len(keep)
     if len(keep) == 0:
         return None
-
+ 
     Dtr = fold.arrays(df_train)
     n_positions = len(fold.coords['position'])
     pos_of_player, pos_counts = models.player_position_map(
         df_train, 'player_id', 'position', fold.enums, n_positions
     )
     season_offsets, T, boundary_cols = ar_calendar(df_train, df_test, fold.enums['season'])
-
+ 
     # Straight calls into src/models.py's build_* functions -- this fold's
     # Fold/D/season_offsets/T/boundary_cols are the only fold-specific
     # inputs; the model structure itself lives entirely in src/models.py.
@@ -246,7 +243,7 @@ def fit_predict(model_name, method, df_train, df_test, seed=0,
                                                               pos_of_player, pos_counts),
     }
     model = builders[model_name]()
-
+ 
     t0 = time.time()
     with model:
         if method == 'advi':
@@ -257,7 +254,7 @@ def fit_predict(model_name, method, df_train, df_test, seed=0,
                                cores=nuts_chains, random_seed=seed, progressbar=False,
                                target_accept=0.99)
     fit_time = time.time() - t0
-
+ 
     Dte = fold.arrays(keep)
     with model:
         set_data = {
@@ -286,8 +283,8 @@ def fit_predict(model_name, method, df_train, df_test, seed=0,
                                               random_seed=seed + 1)
     S = ppc.posterior_predictive['y_obs'].values.reshape(-1, len(keep))
     return dict(keep=keep, S=S, ppc=ppc, n_dropped=n_dropped, fit_time=fit_time, n_train=len(df_train))
-
-
+ 
+ 
 def fit_predict_stack(method, df_train, df_test, seed=0, weights=(0.58, 0.29, 0.13), **kwargs):
     """Blends team_mod, hs_version, and ar_mod's posterior-predictive draws
     via az.weight_predictions -- ArviZ's own implementation of exactly this
@@ -305,7 +302,7 @@ def fit_predict_stack(method, df_train, df_test, seed=0, weights=(0.58, 0.29, 0.
     r_ar = fit_predict('ar', method, df_train, df_test, seed=seed + 2000, **kwargs)
     if r_team is None or r_hs is None or r_ar is None:
         return None
-
+ 
     # all three models use IDX_COLS identically, so drop_cold_starts should
     # keep the same rows -- verify rather than assume, since a silent
     # misalignment here would score garbage without ever raising.
@@ -315,7 +312,7 @@ def fit_predict_stack(method, df_train, df_test, seed=0, weights=(0.58, 0.29, 0.
             "team/hs/ar kept different rows for this fold -- cold-start filtering diverged, "
             "can't blend their posterior-predictive draws row-for-row."
         )
-
+ 
     blended = az.weight_predictions([r_team['ppc'], r_hs['ppc'], r_ar['ppc']], weights=list(weights))
     # az.weight_predictions goes through az.extract internally, which
     # returns dims as (obs_dim, sample) -- NOT (sample, obs_dim) like the
@@ -326,12 +323,12 @@ def fit_predict_stack(method, df_train, df_test, seed=0, weights=(0.58, 0.29, 0.
     da = blended.posterior_predictive['y_obs']
     obs_dim = [d for d in da.dims if d != 'sample'][0]
     S = da.transpose('sample', obs_dim).values
-
+ 
     return dict(keep=r_team['keep'], S=S, n_dropped=r_team['n_dropped'],
                 fit_time=r_team['fit_time'] + r_hs['fit_time'] + r_ar['fit_time'],
                 n_train=r_team['n_train'])
-
-
+ 
+ 
 def fit_predict_bart(method, df_train, df_test, seed=0, m=50,
                       nuts_draws=300, nuts_tune=300, nuts_chains=2, **_ignored):
     """bart_mod3 (models.build_bart_mod3, ported from src/bart_mod.py) gets
@@ -343,7 +340,7 @@ def fit_predict_bart(method, df_train, df_test, seed=0, m=50,
     dot-product uses. **_ignored swallows advi_n/advi_draws when this is
     called through run_one_fold's generic kwargs -- irrelevant here since
     ADVI isn't supported (see below).
-
+ 
     NUTS only -- ADVI is not a valid fit method for a model containing a
     BART term. pymc_bart.BART.logp is a constant pt.zeros_like(x) (BART's
     "prior" isn't a differentiable density over tree structure), so
@@ -352,7 +349,7 @@ def fit_predict_bart(method, df_train, df_test, seed=0, m=50,
     this project's pinned pymc-bart: ADVI silently freezes the BART
     component instead of failing loudly, which is worse than an error,
     hence the explicit guard below.
-
+ 
     Predicting the fitted trees at new (held-out) rows DOES go through the
     ordinary pm.set_data + pm.sample_posterior_predictive path used by
     every other model here -- verified empirically against this project's
@@ -372,27 +369,27 @@ def fit_predict_bart(method, df_train, df_test, seed=0, m=50,
             "model='bart' only supports method='nuts' -- pymc-bart's BART term has no "
             "ADVI-compatible logp, see fit_predict_bart's docstring"
         )
-
+ 
     fold = Fold(df_train, BART_IDX_COLS)
     keep = fold.drop_cold_starts(df_test)
     n_dropped = len(df_test) - len(keep)
     if len(keep) == 0:
         return None
-
+ 
     Dtr = fold.arrays(df_train)
     n_positions = len(fold.coords['position'])
     pos_of_player, pos_counts = models.player_position_map(
         df_train, 'player_id', 'position', fold.enums, n_positions
     )
     model = models.build_bart_mod(Dtr, fold.coords, pos_of_player, pos_counts, m=m)
-
+ 
     t0 = time.time()
     with model:
         idata = pm.sample(draws=nuts_draws, tune=nuts_tune, chains=nuts_chains,
                            cores=nuts_chains, random_seed=seed, progressbar=False,
                            target_accept=0.9)
     fit_time = time.time() - t0
-
+ 
     Dte = fold.arrays(keep)
     with model:
         pm.set_data({
@@ -405,59 +402,17 @@ def fit_predict_bart(method, df_train, df_test, seed=0, m=50,
                                               random_seed=seed + 1)
     S = ppc.posterior_predictive['y_obs'].values.reshape(-1, len(keep))
     return dict(keep=keep, S=S, ppc=ppc, n_dropped=n_dropped, fit_time=fit_time, n_train=len(df_train))
-
-
-def fit_predict_het_gp(method, df_train, df_test, group='skill', seed=0, advi_n=20000, advi_draws=500,
-                        nuts_draws=300, nuts_tune=300, nuts_chains=2, nuts_sampler='pymc'):
-    """het_gp (group='skill', RB/WR/TE) / het_gp_qb (group='qb') -- the
-    heteroskedastic latent-GP models from src/ff_scratchpad_skill.py /
-    src/ff_scratchpad_qb.py, built by models.build_het_gp.
-
-    Scored rows are chosen by the SAME Fold(df_train, IDX_COLS).drop_cold_starts
-    every other model uses, so metrics are row-for-row comparable. Everything
-    het_gp fits on data lives in models.HetPrep and is fit on df_train only."""
-    keep = Fold(df_train, IDX_COLS).drop_cold_starts(df_test)
-    n_dropped = len(df_test) - len(keep)
-    if len(keep) == 0:
-        return None
-
-    cfg = models.HET_CONFIGS[group]
-    train_g = df_train.filter(pl.col('position').is_in(list(cfg.positions)))
-    prep = models.HetPrep(train_g, cfg)
-    Dtr = prep.arrays(train_g)
-    model = models.build_het_gp(Dtr, prep)
-
-    t0 = time.time()
-    with model:
-        if method == 'advi':
-            approx = pm.fit(n=advi_n, method='advi', random_seed=seed, progressbar=False)
-            idata = approx.sample(advi_draws)
-        else:
-            idata = pm.sample(draws=nuts_draws, tune=nuts_tune, chains=nuts_chains,
-                              cores=nuts_chains, random_seed=seed, progressbar=False,
-                              target_accept=0.95, nuts_sampler=nuts_sampler)
-    fit_time = time.time() - t0
-    n_div = int(idata.sample_stats['diverging'].sum()) if method == 'nuts' else 0
-
-    Dte = prep.arrays(keep)
-    with model:
-        pm.set_data(models.het_payload(Dte))
-        ppc = pm.sample_posterior_predictive(idata, var_names=['y_obs'], progressbar=False,
-                                             random_seed=seed + 1)
-    S = ppc.posterior_predictive['y_obs'].values.reshape(-1, len(keep)) * prep.y_sd + prep.y_mu
-    return dict(keep=keep, S=S, ppc=ppc, n_dropped=n_dropped, fit_time=fit_time,
-                n_train=len(Dtr['y']), divergences=n_div)
-
-
+ 
+ 
 # --------------------------------------------------------------- scoring
-
+ 
 def crps(S, y, max_pairs=200, seed=0):
     t1 = np.abs(S - y[None, :]).mean(0)
     i = np.random.default_rng(seed).choice(S.shape[0], size=(2, min(max_pairs, S.shape[0])))
     t2 = np.abs(S[i[0]] - S[i[1]]).mean(0)
     return float((t1 - 0.5 * t2).mean())
-
-
+ 
+ 
 def score(y, S, baseline=None, levels=(0.5, 0.8, 0.9)):
     pred = S.mean(0)
     out = dict(n=len(y), rmse=float(np.sqrt(((pred - y) ** 2).mean())),
@@ -469,14 +424,14 @@ def score(y, S, baseline=None, levels=(0.5, 0.8, 0.9)):
     if baseline is not None:
         out['rmse_base'] = float(np.sqrt(((baseline - y) ** 2).mean()))
     return out
-
-
+ 
+ 
 def past_only_baseline(keep, train, key='player_season'):
     b = train.group_by(key).agg(pl.col('total_fantasy_points').mean().alias('_pm'))
     return (keep.join(b, on=key, how='left')['_pm']
             .fill_null(float(train['total_fantasy_points'].mean())).to_numpy())
-
-
+ 
+ 
 def fit_predict_baseline(df_train, df_test):
     """The naive past_only_baseline point prediction, run through the exact
     same score()/CSV pipeline as every real model so it shows up as its own
@@ -484,24 +439,24 @@ def fit_predict_baseline(df_train, df_test):
     rows compute gain_pct against. No PyMC fit -- this is just
     past_only_baseline wrapped so it satisfies fit_predict's return
     contract (keep/S/n_dropped/fit_time/n_train).
-
+ 
     S is a single pseudo-draw per row (a point prediction has no posterior
     uncertainty). This is not a hack that needs special-casing in score():
     crps()'s pairwise term needs >=2 samples and is exactly 0 with only 1,
     so crps degrades gracefully to plain MAE; cov50/80/90 will come out
     ~0% since a single point can't form an interval. Both are the CORRECT
     answer for a point-estimate 'model', not something to fix.
-
+ 
     No cold-start filtering either -- past_only_baseline doesn't depend on
     any model's categorical encoders, so every df_test row is scoreable."""
     pred = past_only_baseline(df_test, df_train)
     S = pred[None, :]  # (1, n_obs)
     return dict(keep=df_test, S=S, n_dropped=0, fit_time=0.0, n_train=len(df_train))
-
-
+ 
+ 
 # ------------------------------------------------------------------ main
-
-def already_done(out_csv, model_name, method, season, week, shrunk=False, positions='all'):
+ 
+def already_done(out_csv, model_name, method, season, week, shrunk=False):
     """True if this exact (model, method, season, week, shrunk) fold is
     already a row in out_csv -- lets a sweep be re-run/resumed without
     silently duplicating folds (same seed + same data => bit-identical
@@ -517,35 +472,21 @@ def already_done(out_csv, model_name, method, season, week, shrunk=False, positi
         # a CSV written before --shrunk existed -- every row in it is
         # implicitly a plain-features run.
         existing = existing.with_columns(pl.lit(False).alias('shrunk'))
-    if 'positions' not in existing.columns:
-        # a CSV written before --positions existed -- every row scored all positions.
-        existing = existing.with_columns(pl.lit('all').alias('positions'))
     match = existing.filter(
         (pl.col('model') == model_name) & (pl.col('method') == method) &
         (pl.col('season') == season) & (pl.col('week') == week) &
-        (pl.col('shrunk') == shrunk) & (pl.col('positions').fill_null('all') == positions)
+        (pl.col('shrunk') == shrunk)
     )
     return match.height > 0
-
-
+ 
+ 
 def run_one_fold(model_name, method, season, week, out_csv=RESULTS_CSV, stack_weights=(0.58, 0.29, 0.13),
-                  shrunk=False, bart_m=50, positions='all', nuts_sampler='pymc', **kwargs):
-    required = HET_MODEL_POSITIONS.get(model_name)
-    if required is not None and positions != required:
-        raise ValueError(f"model={model_name!r} covers positions={required!r} only -- run it (and every model "
-                         f"you compare it against) with --positions {required} so all rows scored are the same")
-    if already_done(out_csv, model_name, method, season, week, shrunk=shrunk, positions=positions):
-        print(f"SKIP: {model_name} {method} {season} wk{week} shrunk={shrunk} positions={positions} "
-              f"already in {out_csv}")
+                  shrunk=False, bart_m=50, **kwargs):
+    if already_done(out_csv, model_name, method, season, week, shrunk=shrunk):
+        print(f"SKIP: {model_name} {method} {season} wk{week} shrunk={shrunk} already in {out_csv}")
         return
-
+ 
     df = pl.read_parquet(DATA_PATH)
-    if positions != 'all':
-        # one primary position per player, then keep only this group -- applied
-        # before the window/test split so train, test, the baseline and every
-        # model's cold-start check all see the same rows.
-        df = models.with_primary_position(df)
-        df = df.filter(pl.col('position').is_in(list(models.HET_CONFIGS[positions].positions)))
     if shrunk:
         # same swap src/fit_model.py's --shrunk uses (models.py's shared
         # helper) -- left-joins processed-data/shrinkage_features.csv and
@@ -553,7 +494,7 @@ def run_one_fold(model_name, method, season, week, out_csv=RESULTS_CSV, stack_we
         # column NAMES (and therefore Fold's cont_vars coord) are
         # unchanged either way; only the row's actual lag values differ.
         df = models.apply_shrunk_features(df)
-    if model_name in ('team', 'stack', 'r2d2', 'bart', 'het_gp', 'het_gp_qb'):
+    if model_name in ('team', 'stack', 'r2d2', 'bart'):
         # same construction as src/ff_ar.py's top-of-file join: own-team
         # form keyed on (season, week, team), opponent form re-keyed on
         # (season, week, opp_team). Row-count assertions guard against the
@@ -563,29 +504,23 @@ def run_one_fold(model_name, method, season, week, out_csv=RESULTS_CSV, stack_we
         # 7232) -- if team_form.parquet ever regresses, this fails loudly
         # here instead of silently ballooning memory three models later.
         team_form = pl.read_parquet(TEAM_FORM_PATH)
-        if model_name in HET_MODEL_POSITIONS:
-            # het_gp uses LAST week's form, lagged per team (the scratchpads' intent).
-            # team/r2d2/bart keep their original same-week join so existing rows
-            # stay reproducible.
-            team_form = (team_form.sort('team', 'season', 'week')
-                         .with_columns(pl.col('team_form').shift(1).over('team')))
         assert team_form.height == team_form.select('season', 'week', 'team').unique().height, (
             "team_form.parquet has duplicate (season, week, team) keys -- "
             "re-check the join in src/estimate_latent_ability.py before using it here"
         )
         opp_team_form = team_form.rename({'team': 'opp_team', 'team_form': 'opp_team_form'})
-
+ 
         n0 = df.height
         df = df.join(team_form, on=['season', 'week', 'team'], how='left')
         assert df.height == n0, f"team_form join fanned out rows: {n0} -> {df.height}"
         df = df.join(opp_team_form, on=['season', 'week', 'opp_team'], how='left')
         assert df.height == n0, f"opp_team_form join fanned out rows: {n0} -> {df.height}"
-
+ 
         n_missing = df.select((pl.col('team_form').is_null() | pl.col('opp_team_form').is_null()).sum()).item()
         if n_missing:
             print(f"warning: {n_missing} rows have no team_form/opp_team_form match -- filling with 0.0")
         df = df.with_columns(pl.col('team_form', 'opp_team_form').fill_null(0.0))
-
+ 
     train = df.filter(
         (pl.col('season') >= season - (WINDOW_SEASONS - 1)) &
         ((pl.col('season') < season) | ((pl.col('season') == season) & (pl.col('week') < week)))
@@ -594,14 +529,11 @@ def run_one_fold(model_name, method, season, week, out_csv=RESULTS_CSV, stack_we
     if len(test) == 0 or len(train) < 200:
         print(f"SKIP: no data for {season} wk{week}")
         return
-
+ 
     if model_name == 'stack':
         r = fit_predict_stack(method, train, test, weights=stack_weights, **kwargs)
     elif model_name == 'bart':
         r = fit_predict_bart(method, train, test, m=bart_m, **kwargs)
-    elif model_name in HET_MODEL_POSITIONS:
-        r = fit_predict_het_gp(method, train, test, group=HET_MODEL_POSITIONS[model_name],
-                               nuts_sampler=nuts_sampler, **kwargs)
     elif model_name == 'baseline':
         # no PyMC fit, no method/seed/draws kwargs apply -- method is still
         # a required CLI arg (accepted, just ignored) so already_done()'s
@@ -612,15 +544,14 @@ def run_one_fold(model_name, method, season, week, out_csv=RESULTS_CSV, stack_we
     if r is None:
         print(f"SKIP: all test rows were cold starts for {season} wk{week}")
         return
-
+ 
     y = r['keep']['total_fantasy_points'].to_numpy()
     base = past_only_baseline(r['keep'], train)
     m = score(y, r['S'], baseline=base)
-    m.update(model=model_name, method=method, season=season, week=week, shrunk=shrunk, positions=positions,
-             divergences=r.get('divergences'),
+    m.update(model=model_name, method=method, season=season, week=week, shrunk=shrunk,
              fit_time=r['fit_time'], n_train=r['n_train'], n_dropped=r['n_dropped'])
     print(json.dumps(m, indent=2))
-
+ 
     row = pl.DataFrame([m])
     import os
     if os.path.exists(out_csv):
@@ -628,14 +559,14 @@ def run_one_fold(model_name, method, season, week, out_csv=RESULTS_CSV, stack_we
         pl.concat([existing, row], how='diagonal_relaxed').write_csv(out_csv)
     else:
         row.write_csv(out_csv)
-
-
+ 
+ 
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
     # team_season left out of the default choices since it's not in
     # src/ff_ar.py's current active model set -- pass model_name=
     # 'team_season' to fit_predict() directly if you deliberately want it.
-    p.add_argument('model', choices=['hs', 'ar', 'team', 'r2d2', 'stack', 'baseline', 'bart', 'het_gp', 'het_gp_qb'])
+    p.add_argument('model', choices=['hs', 'ar', 'team', 'r2d2', 'stack', 'baseline', 'bart'])
     p.add_argument('method', choices=['advi', 'nuts'])
     p.add_argument('season', type=int)
     p.add_argument('week', type=float)
@@ -654,23 +585,17 @@ if __name__ == '__main__':
     p.add_argument('--shrunk', action='store_true',
                     help="fit with the shrinkage_features.csv-derived shrunk lag columns instead of the plain lags "
                          "(models.SHRUNK_SWAP_COLS) -- same feature swap as src/fit_model.py's --shrunk")
-    p.add_argument('--positions', choices=['all', 'skill', 'qb'], default='all',
-                   help="'skill' (RB/WR/TE) or 'qb' restricts train AND test to that group -- required for "
-                        "het_gp / het_gp_qb, and for any model you compare against them")
-    p.add_argument('--sampler', choices=['pymc', 'nutpie'], default='pymc',
-                   help="NUTS backend for het_gp / het_gp_qb")
     args = p.parse_args()
-
+ 
     stack_weights = tuple(float(x) for x in args.stack_weights.split(','))
-
+ 
     run_one_fold(args.model, args.method, args.season, args.week,
                  out_csv=args.out,
                  stack_weights=stack_weights,
                  shrunk=args.shrunk,
                  bart_m=args.bart_m,
-                 positions=args.positions,
-                 nuts_sampler=args.sampler,
                  seed=args.seed,
                  advi_n=args.advi_n, advi_draws=args.advi_draws,
                  nuts_draws=args.nuts_draws, nuts_tune=args.nuts_tune,
                  nuts_chains=args.chains)
+ 

@@ -22,12 +22,12 @@ library(MetBrewer)
 library(tinytable)
 suppressPackageStartupMessages(library(tidyverse))
 
-backtests = read_csv('results/backtest_walkforward.csv')
+backtests = read_csv('results/backtest_walkforward_09_10.csv')
 
 coverage_summary = backtests |>
     summarise(
         across(c(cov50, cov80, cov90), \(x) weighted.mean(x, w = n)),
-        .by = model
+        .by = c(model, shrunk)
     ) |>
     pivot_longer(
         cols = starts_with("cov"),
@@ -38,14 +38,13 @@ coverage_summary = backtests |>
     mutate(
         nominal = as.numeric(nominal),
         actual = actual * 100,
-        model = recode_values(model,
-            "baseline" ~ "Baseline (point estimate)",
-            "ar"       ~ "AR(1) Process on Opp form",
-            "hs"       ~ "HSGP on player form",
-            "team"     ~ "State-Space est team strength",
-            "stack"    ~ "Bayesian Model Stacking"
+        model = case_when(        
+            model == 'r2d2' & shrunk == TRUE ~ 'R2D2 Prior & \n Shrunk Usage', 
+            model == 'r2d2' & shrunk == FALSE ~ 'R2D2 Prior', 
+            .default = 'State-Space Est Team Strength'
         )
     )
+
 
 
 label_data = coverage_summary |> filter(nominal == max(nominal))
@@ -197,6 +196,7 @@ After running the ELPD comparisons, the results suggested that I should also try
 #| echo: false
 #| message: false 
 #| warning: false
+#| label: summary-tabel
 
 
 
@@ -204,22 +204,22 @@ After running the ELPD comparisons, the results suggested that I should also try
 summary_stats = backtests |> 
     summarise(
         across(c(rmse, mae, crps, fit_time), \(x) mean(x), .names = "{.col}_avg"), 
-        .by = model
+        .by = c(model, shrunk)
     ) |>
         arrange(rmse_avg) |> 
         mutate(
-             rmse_avg_pct_improve = round((rmse_avg[model == "baseline"] - rmse_avg) / rmse_avg[model == "baseline"] * 100, 2),
+            rmse_avg_pct_improve = round((rmse_avg[model == "baseline"] - rmse_avg) / rmse_avg[model == "baseline"] * 100, 2),
             fit_time_avg  = fit_time_avg/60,
-            model = case_match(model, 
-            'team' ~ 'State-Space Model estimated team strength', 
-            'stack' ~ 'Bayesian Model Stacking', 
-            'ar' ~ 'AR(1) Process on Opp form', 
-            'hs' ~ 'HSGP on player form')
+            model =  case_when(        
+            model == 'r2d2' & shrunk == TRUE ~ 'R2D2 Prior & \n Shrunk Usage', 
+            model == 'r2d2' & shrunk == FALSE ~ 'R2D2 Prior', 
+            .default = 'State-Space Est Team Strength'
+        )
         ) |> 
             filter_out(model == 'baseline') |> 
             pivot_longer(-model) |>
             mutate(
-                name = case_match(name, 
+                name = recode_values(name, 
                 'crps_avg' ~ 'Mean CRPS', 
                 'fit_time_avg' ~ 'Average Fit Time', 
                 'mae_avg' ~ 'Mean MAE', 

@@ -84,7 +84,8 @@ raw_fantasy = (
         pl.col('player_id', 'full_name', 'position', 'total_fantasy_points', 'total_fantasy_points_diff_team', 'game_id', 'receptions', 'pass_completions', 'season', 'week'), 
         cs.ends_with('gained'), 
         cs.ends_with('points_diff'),
-        cs.ends_with('attempt'), 
+        cs.ends_with('attempt'),
+        pl.col('rec_air_yards')
         
     )
     .filter((pl.col('player_id').is_not_null()) & 
@@ -187,6 +188,10 @@ make_covariate = (
         .then(pl.col('rec_attempt') / pl.col('rec_attempt_total'))
         .otherwise(None)
         .alias("target_share"),
+        pl.when(pl.col('rush_attempt_total') > 0)
+        .then(pl.col('rush_attempt')/pl.col('rush_attempt_total'))
+        .otherwise(None)
+        .alias('rush_share'),
         pl.when(pl.col('rec_attempt') > 0)
         .then(pl.col('rec_yards_gained') / pl.col('rec_attempt'))
         .otherwise(None)
@@ -194,8 +199,12 @@ make_covariate = (
         pl.when(pl.col('pass_attempt_total') > 0)
         .then(pl.col('pass_yards_gained') / pl.col('pass_attempt_total'))
         .otherwise(None)
-        .alias('yards_per_pass_attempt')
-
+        .alias('yards_per_pass_attempt'),
+        pl.when(pl.col('rec_attempt') > 0)
+        .then(pl.col('rec_air_yards') / pl.col('rec_attempt'))
+        .otherwise(None)
+        .alias('avg_depth_of_target'), 
+        
     )
 )
 
@@ -263,7 +272,11 @@ bring_back_in = (
         pl.col('away_team').replace(team_mapping).name.keep()
     )
     .with_columns(
-        pl.col('yards_per_rush_attempt', 'target_share', 'yards_per_target', 'yards_per_pass_attempt').shift(1).over('player_id').name.prefix('lag_')
+        pl.col('yards_per_rush_attempt',
+                'target_share',
+                'yards_per_target',
+                'yards_per_pass_attempt',
+                'avg_depth_of_target', 'rush_share').shift(1).over('player_id').name.prefix('lag_')
     )
     .fill_null(0)
 )

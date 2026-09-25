@@ -28,7 +28,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."   # repo root, so processed-data/ resolves
 
-MODELS="${MODELS:-ar hs team r2d2}"
+MODELS="${MODELS:-team r2d2 bart}"
 SHRUNK="${SHRUNK:-false true}"
 DRAWS="${DRAWS:-1000}"
 TUNE="${TUNE:-1000}"
@@ -36,7 +36,7 @@ CHAINS="${CHAINS:-4}"
 TARGET_ACCEPT="${TARGET_ACCEPT:-0.99}"
 SEED="${SEED:-41029041}"
 OUT_DIR="${OUT_DIR:-model-nc}"
-FORCE="${FORCE:-1}"
+FORCE="${FORCE:-0}"
 
 mkdir -p "$OUT_DIR"
 

@@ -71,14 +71,16 @@ train = join_shrink.filter(
 
 std_these = ['spread_line',
             'roll_avg_points_allowed',
-            'lag_yards_per_rush_attempt_shrunk',
-            'lag_yards_per_target_shrunk',
-            'lag_yards_per_pass_attempt_shrunk',
+            'lag_yards_per_rush_attempt',
+            'lag_yards_per_target',
+            'lag_yards_per_pass_attempt',
+            'lag_avg_depth_of_target',
             'lag_target_share',
+            'rush_share',
             'temp', 'wind', 'games_missed_ytd',
             'lag_offense_pct', 'lag_st_pct']
 binary_vars = ['is_grass', 'is_indoors', 'is_home', 'div_game', 'era']
-idx_cols = ['player', 'position', 'team', 'week', 'tenure', 'player_season',
+idx_cols = ['player_id', 'position', 'team', 'week', 'tenure', 'player_season',
             'team_season', 'opp_team', 'season', 'games_missed_ytd']
 
 scalers = models.fit_scalers(df=train, cols=std_these)
@@ -126,9 +128,9 @@ season_offsets, T, boundary_cols = models.build_ar_calendar(weeks_per_season)
 # otherwise redundant, which tanks the position-level parameters' ESS.
 n_positions = len(coords['position'])
 position_of_player, position_group_counts = models.player_position_map(
-    raw_data, 'player', 'position', idxs, n_positions
+    raw_data, 'player_id', 'position', idxs, n_positions
 )
-assert len(position_of_player) == len(coords['player']), (
+assert len(position_of_player) == len(coords['player_id']), (
     f"position_of_player covers {len(position_of_player)} players, "
     f"expected {len(coords['player'])} -- check idx_cols/coords alignment"
 )
@@ -147,24 +149,26 @@ tenure_z_row_vals = (
 # derivation.
 week_grid_vals = np.array(coords['week'], dtype='float64')
 
-D = dict(
-    player=train['player_idx'].to_numpy().squeeze(),
-    position=train['position_idx'].to_numpy().squeeze(),
-    team=train['team_idx'].to_numpy().squeeze(),
-    tenure=train['tenure_idx'].to_numpy().squeeze(),
-    opp_team=train['opp_team_idx'].to_numpy().squeeze(),
-    season=train['season_idx'].to_numpy().squeeze(),
-    week=train['week_idx'].to_numpy().squeeze(),
-    player_season=train['player_season_idx'].to_numpy().squeeze(),
-    cont=cont_dat_train.to_numpy(),
-    bi=binary_train.to_numpy(),
-    y=train['total_fantasy_points'].to_numpy(),
-    tenure_z=tenure_z_row_vals,
-    games_missed_z=train['games_missed_ytd_z'].to_numpy(),
-    snap_pct_z=train['lag_offense_pct_z'].to_numpy(),
-    team_form_z=train['team_form_std'].to_numpy(),
-    opp_team_form_z=train['opp_team_form_std'].to_numpy(),
-)
+D = {
+    'player': train['player_id_idx'].to_numpy().squeeze(),
+    'position': train['position_idx'].to_numpy().squeeze(),
+    'team': train['team_idx'].to_numpy().squeeze(),
+    'tenure': train['tenure_idx'].to_numpy().squeeze(),
+    'opp_team': train['opp_team_idx'].to_numpy().squeeze(),
+    'season': train['season_idx'].to_numpy().squeeze(),
+    'week': train['week_idx'].to_numpy().squeeze(),
+    'player_season': train['player_season_idx'].to_numpy().squeeze(),
+    'cont': cont_dat_train.to_numpy(),
+    'bi': binary_train.to_numpy(),
+    'y': train['total_fantasy_points'].to_numpy(),
+    'tenure_z': tenure_z_row_vals,
+    'games_missed_z': train['games_missed_ytd_z'].to_numpy(),
+    'snap_pct_z': train['lag_offense_pct_z'].to_numpy(),
+    'team_form_z': train['team_form_std'].to_numpy(),
+    'opp_team_form_z': train['opp_team_form_std'].to_numpy(),
+    'target_share_z': train['target_share'].to_numpy(), 
+    'rush_share_z': train['rush_share_z'].to_numpy()
+}
 
 
 def sample_check_coords(frame, col, n=5, seed=None):
@@ -174,7 +178,7 @@ def sample_check_coords(frame, col, n=5, seed=None):
     return frame[col].unique().sample(n, seed=seed).to_list()
 
 
-def fit_and_diagnose(model, name, target_accept=0.99, prior_check_only=True, samps = 50, **sample_kwargs):
+def fit_and_diagnose(model, name, target_accept=0.99, prior_check_only=True, samps = 50, save = False, **sample_kwargs, ):
     """Standard workflow shared by all three models: prior predictive check
     -> NUTS -> posterior predictive + log-likelihood -> save to
     model-nc/ff_{name}.nc. Returns the idata. Deliberately does NOT call
@@ -202,116 +206,40 @@ def fit_and_diagnose(model, name, target_accept=0.99, prior_check_only=True, sam
 
     with model:
         pm.compute_log_likelihood(idata)
+        pm.stats.compute_log_prior(idata)
         idata.update(pm.sample_posterior_predictive(idata))
-
-    idata.to_netcdf(f'model-nc/ff_{name}.nc')
+    if save:
+        idata.to_netcdf(f'model-nc/ff_{name}.nc')
     return idata
 
 
-# ============================================================================
-# ar_mod -- flat per-position intercept + opponent-strength AR(1)
-# ============================================================================
 
-ar_mod = models.build_ar_mod(D, coords, season_offsets, T, boundary_cols,
-                              position_of_player, position_group_counts)
-
-
-
-
-idata_ar = fit_and_diagnose(ar_mod, 'ar')
-idata_ar = fit_and_diagnose(ar_mod, 'ar', prior_check_only=False)
-
-az.rcParams['plot.max_subplots'] = 60
-
-az.plot_ess_evolution(
-        idata_ar, var_names=[rv.name for rv in ar_mod.free_RVs if rv.size.eval() <= 10]
-    )
-
-
-
-check_players = sample_check_coords(train, 'player')
-check_tenure = pl.from_records(coords['tenure']).sample(3)['column_0']
-az.plot_ess_evolution(idata_ar, var_names=['player_skill'],
-                       coords={'player': check_players, 'tenure': check_tenure})
-
-check_opp = sample_check_coords(train, 'opp_team')
-check_global_step = pl.from_records(coords['global_step_full']).sample(5)['column_0']
-az.plot_ess_evolution(idata_ar, var_names=['opp_ar'],
-                       coords={'opp_team': check_opp, 'global_step_full': check_global_step})
-az.plot_ess_evolution(idata_ar, var_names=['opp_theta_init', 'opp_rho', 'opp_sigma_theta'])
-
-check_player_seasons = sample_check_coords(train, 'player_season')
-check_week = pl.from_records(coords['week']).sample(4)['column_0']  # still used by hs_version/team_mod below
-az.plot_ess_evolution(idata_ar, var_names=['recent_form'],
-                       coords={'player_season': check_player_seasons})
-az.plot_ess_evolution(idata_ar, var_names=['form_sigma'])
-
-az.plot_ppc_dist(idata_ar, kind='ecdf')
-az.plot_ppc_dist(idata_ar, num_samples=100)
-az.plot_energy(idata_ar)
-
-
-# ============================================================================
-# hs_version -- LKJ-correlated position intercept + age slope + opp_ar
-# ============================================================================
-# Statistically tied with ar_mod on held-out CRPS/RMSE (see module
-# docstring). Kept since it's not clearly worse and calibrates slightly
-# better; not the model to invest further complexity in until team_mod
-# settles whether own-team quality is worth adding.
-
-hs_version = models.build_hs_version(D, coords, season_offsets, T, boundary_cols,
-                                      position_of_player, position_group_counts, week_grid_vals)
-
-
-
-
-
-id_hs = fit_and_diagnose(hs_version, 'hs')
-id_hs = fit_and_diagnose(hs_version, 'hs', prior_check_only=False)
-
-
-az.rcParams['plot.max_subplots'] = 60
-
-
-az.plot_ess_evolution(
-        id_hs, var_names=[rv.name for rv in hs_version.free_RVs if rv.size.eval() <= 10]
-    )
-
-check_players = sample_check_coords(train, 'player')
-check_tenure = pl.from_records(coords['tenure']).sample(3)['column_0']
-
-az.plot_ess_evolution(id_hs, var_names=['player_skill'],
-                       coords={'player': check_players, 'tenure': check_tenure})
-az.plot_ess_evolution(id_hs, var_names=['ab_position'])
-
-az.plot_ess_evolution(id_hs, var_names=['recent_form'],
-                       coords={'player_season': check_player_seasons, 'week': check_week})
-az.plot_ess_evolution(id_hs, var_names=['form_ell', 'form_eta'])
-
-# getting rid of these just because the storing these can cause the session to crash? 
-del id_hs, idata_ar
-# ============================================================================
-# team_mod -- ar_mod + a partially-pooled, time-FLAT per-team offensive-
-# environment effect. See src/models.py's build_team_mod docstring for why:
-# neither ar_mod nor hs_version ever use `team_idx` (the player's own
-# team) in mu -- only the OPPONENT's defensive quality is modeled
-# (roll_avg_points_allowed_z, opp_ar). This is the simplest possible test
-# of whether the player's own team's quality matters at all.
-#
-# Uses the LKJ position-intercept structure (same as hs_version) purely
-# because that's what was already built when this model was added; the
-# team-quality question and the position-intercept-structure question are
-# independent, so this isn't an endorsement of LKJ over flat.
 
 team_mod = models.build_team_mod(D, coords, season_offsets, T, boundary_cols,
-                                  position_of_player, position_group_counts)
+                                  position_of_player, position_group_counts,)
+
 
 
 id_team = fit_and_diagnose(team_mod, 'team')
 ### probably need to bump the sampling up
-id_team = fit_and_diagnose(team_mod, 'team_mod', prior_check_only=False)
+id_team = fit_and_diagnose(team_mod, 'team_mod_sans_ar', prior_check_only=False, save = True, tune = 1000, draws = 1000)
+
+check_players = sample_check_coords(train, 'player_id')
+check_tenure = pl.from_records(coords['tenure']).sample(3)['column_0']
+
+az.plot_ess_evolution(id_team, var_names=['player_skill'],
+                       coords={'player_id': check_players, 'tenure': check_tenure})
+az.plot_ess_evolution(id_team, var_names=['ab_position'])
 
 id_team.sample_stats['diverging'].sum().item()
+
+check = az.psense_summary(id_team)
+
+check_pl = pl.from_pandas(
+    check.reset_index()
+)
+
+
 
 az.rcParams['plot.max_subplots'] = 60
 

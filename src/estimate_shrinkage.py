@@ -149,7 +149,7 @@ def main():
         .select('player_id', 'position', 'season', 'week',
                 'rush_attempt', 'rush_yards_gained',
                 'rec_attempt', 'rec_yards_gained',
-                'pass_attempt', 'pass_yards_gained')
+                'pass_attempt', 'pass_yards_gained', 'rec_air_yards')
         .filter((pl.col('player_id').is_not_null()) &
                 (pl.col('position').is_in(['TE', 'RB', 'WR', 'QB', 'FB'])))
         .with_columns(pl.col('season').cast(pl.Int32))
@@ -163,13 +163,18 @@ def main():
             pl.when(pl.col('pass_attempt') > 0)
             .then(pl.col('pass_yards_gained') / pl.col('pass_attempt'))
             .otherwise(None).alias('yards_per_pass_attempt'),
-        )
+            pl.when(pl.col('rec_attempt') > 0)
+            .then(pl.col('rec_air_yards') / pl.col('rec_attempt'))
+            .otherwise(None)
+            .alias('avg_depth_of_target')
+            )
     )
 
     specs = [
         ('yards_per_rush_attempt', 'rush_attempt'),
         ('yards_per_target', 'rec_attempt'),
         ('yards_per_pass_attempt', 'pass_attempt'),
+        ('avg_depth_of_target', 'rec_attempt'),
     ]
 
     print(f"{'feature':<24} {'k':>8} {'sigma2':>9} {'tau2_raw':>10} {'league_avg':>11}  note")
@@ -186,7 +191,7 @@ def main():
 
     lag_cols = ['yards_per_rush_attempt', 'yards_per_target', 'yards_per_pass_attempt',
                 'yards_per_rush_attempt_shrunk', 'yards_per_target_shrunk',
-                'yards_per_pass_attempt_shrunk']
+                'yards_per_pass_attempt_shrunk', 'avg_depth_of_target_shrunk', 'rec_air_yards']
 
     out = (
         raw.sort(['player_id', 'season', 'week'])
@@ -195,7 +200,7 @@ def main():
         )
         .fill_null(0)
         .select('player_id', 'season', 'week',
-                'rush_attempt', 'rec_attempt', 'pass_attempt',
+                'rush_attempt', 'rec_attempt', 'pass_attempt', 'rec_air_yards',
                 *[f'lag_{c}' for c in lag_cols])
     )
     out.write_csv(OUT_PATH)

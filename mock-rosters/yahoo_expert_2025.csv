@@ -1,145 +1,146 @@
-pick,player,position,team
-1,Ja'Marr Chase,WR,Matt Harmon
-2,CeeDee Lamb,WR,Ian Hartitz
-3,Justin Jefferson,WR,Ray Garvin
-4,Bijan Robinson,RB,Rich Hribar
-5,Saquon Barkley,RB,Jennifer Eakins
-6,Jahmyr Gibbs,RB,Nathan Jahnke
-7,Christian McCaffrey,RB,Chris Allen
-8,Puka Nacua,WR,Dave Kluge
-9,De'Von Achane,RB,Ryan Heath
-10,Ashton Jeanty,RB,Ben Gretch
-11,Brian Thomas Jr.,WR,Derek Brown
-12,Malik Nabers,WR,Justin Boone
-13,Nico Collins,WR,Justin Boone
-14,Drake London,WR,Derek Brown
-15,Brock Bowers,TE,Ben Gretch
-16,Amon-Ra St. Brown,WR,Ryan Heath
-17,Ladd McConkey,WR,Dave Kluge
-18,A.J. Brown,WR,Chris Allen
-19,Bucky Irving,RB,Nathan Jahnke
-20,Derrick Henry,RB,Jennifer Eakins
-21,Rashee Rice,WR,Rich Hribar
-22,Tyreek Hill,WR,Ray Garvin
-23,Josh Jacobs,RB,Ian Hartitz
-24,Jonathan Taylor,RB,Matt Harmon
-25,Lamar Jackson,QB,Matt Harmon
-26,Josh Allen,QB,Ian Hartitz
-27,Chase Brown,RB,Ray Garvin
-28,Tee Higgins,WR,Rich Hribar
-29,Davante Adams,WR,Jennifer Eakins
-30,Trey McBride,TE,Nathan Jahnke
-31,Garrett Wilson,WR,Chris Allen
-32,Jaxon Smith-Njigba,WR,Dave Kluge
-33,Jayden Daniels,QB,Ryan Heath
-34,Kenneth Walker III,RB,Ben Gretch
-35,George Kittle,TE,Derek Brown
-36,Breece Hall,RB,Justin Boone
-37,Kyren Williams,RB,Justin Boone
-38,RJ Harvey,RB,Derek Brown
-39,Marvin Harrison Jr.,WR,Ben Gretch
-40,Omarion Hampton,RB,Ryan Heath
-41,James Cook,RB,Dave Kluge
-42,DJ Moore,WR,Chris Allen
-43,Jalen Hurts,QB,Nathan Jahnke
-44,Mike Evans,WR,Jennifer Eakins
-45,Terry McLaurin,WR,Rich Hribar
-46,Chuba Hubbard,RB,Ray Garvin
-47,Tetairoa McMillan,WR,Ian Hartitz
-48,Alvin Kamara,RB,Matt Harmon
-49,George Pickens,WR,Matt Harmon
-50,DK Metcalf,WR,Ian Hartitz
-51,Joe Mixon,RB,Ray Garvin
-52,Jaylen Waddle,WR,Rich Hribar
-53,Courtland Sutton,WR,Jennifer Eakins
-54,Jameson Williams,WR,Nathan Jahnke
-55,Xavier Worthy,WR,Chris Allen
-56,TreVeyon Henderson,RB,Dave Kluge
-57,DeVonta Smith,WR,Ryan Heath
-58,Travis Hunter,WR,Ben Gretch
-59,Kaleb Johnson,RB,Derek Brown
-60,James Conner,RB,Justin Boone
-61,Chris Olave,WR,Justin Boone
-62,Calvin Ridley,WR,Derek Brown
-63,Zay Flowers,WR,Ben Gretch
-64,Jauan Jennings,WR,Ryan Heath
-65,D'Andre Swift,RB,Dave Kluge
-66,Joe Burrow,QB,Chris Allen
-67,Jordan Addison,WR,Nathan Jahnke
-68,David Montgomery,RB,Jennifer Eakins
-69,Isiah Pacheco,RB,Rich Hribar
-70,Rome Odunze,WR,Ray Garvin
-71,Chris Godwin,WR,Ian Hartitz
-72,Tony Pollard,RB,Matt Harmon
-73,Jayden Reed,WR,Matt Harmon
-74,Brian Robinson Jr.,RB,Ian Hartitz
-75,Jerry Jeudy,WR,Ray Garvin
-76,Stefon Diggs,WR,Rich Hribar
-77,Jakobi Meyers,WR,Jennifer Eakins
-78,Deebo Samuel Sr.,WR,Nathan Jahnke
-79,Jaylen Warren,RB,Chris Allen
-80,Ricky Pearsall,WR,Dave Kluge
-81,Josh Downs,WR,Ryan Heath
-82,Michael Pittman Jr.,WR,Ben Gretch
-83,Jayden Higgins,WR,Derek Brown
-84,Sam LaPorta,TE,Justin Boone
-85,Emeka Egbuka,WR,Justin Boone
-86,Cam Skattebo,RB,Derek Brown
-87,Brandon Aiyuk,WR,Ben Gretch
-88,Aaron Jones,RB,Ryan Heath
-89,Travis Etienne Jr.,RB,Dave Kluge
-90,Tyrone Tracy,RB,Chris Allen
-91,Matthew Golden,WR,Nathan Jahnke
-92,Khalil Shakir,WR,Jennifer Eakins
-93,Darnell Mooney,WR,Rich Hribar
-94,J.K. Dobbins,RB,Ray Garvin
-95,Jordan Mason,RB,Ian Hartitz
-96,Rashid Shaheed,WR,Matt Harmon
-97,Rashod Bateman,WR,Matt Harmon
-98,Rhamondre Stevenson,RB,Ian Hartitz
-99,Keon Coleman,WR,Ray Garvin
-100,Patrick Mahomes,QB,Rich Hribar
-101,Zach Charbonnet,RB,Jennifer Eakins
-102,Quinshon Judkins,RB,Nathan Jahnke
-103,Tyjae Spears,RB,Chris Allen
-104,Kyler Murray,QB,Dave Kluge
-105,Luther Burden,WR,Ryan Heath
-106,Bhayshul Tuten,RB,Ben Gretch
-107,Tre Harris,WR,Derek Brown
-108,Trey Benson,RB,Justin Boone
-109,Javonte Williams,RB,Justin Boone
-110,Tank Bigsby,RB,Derek Brown
-111,T.J. Hockenson,TE,Ben Gretch
-112,Roschon Johnson,RB,Ryan Heath
-113,Travis Kelce,TE,Dave Kluge
-114,Mark Andrews,TE,Chris Allen
-115,Cooper Kupp,WR,Nathan Jahnke
-116,Evan Engram,TE,Jennifer Eakins
-117,Ray Davis,RB,Rich Hribar
-118,J.J. McCarthy,QB,Ray Garvin
-119,Najee Harris,RB,Ian Hartitz
-120,Tucker Kraft,TE,Matt Harmon
-121,Jaydon Blue,RB,Matt Harmon
-122,David Njoku,TE,Ian Hartitz
-123,Dallas Goedert,TE,Ray Garvin
-124,Isaac Guerendo,RB,Rich Hribar
-125,Baker Mayfield,QB,Jennifer Eakins
-126,Marvin Mims Jr.,WR,Nathan Jahnke
-127,Christian Kirk,WR,Chris Allen
-128,Rachaad White,RB,Dave Kluge
-129,Colston Loveland,TE,Ryan Heath
-130,Bo Nix,QB,Ben Gretch
-131,Justin Fields,QB,Derek Brown
-132,Caleb Williams,QB,Justin Boone
-133,Kyle Williams,WR,Justin Boone
-134,Dak Prescott,QB,Derek Brown
-135,Tyler Allgeier,RB,Ben Gretch
-136,Cedric Tillman,WR,Ryan Heath
-137,Justin Herbert,QB,Dave Kluge
-138,Romeo Doubs,WR,Chris Allen
-139,Braelon Allen,RB,Nathan Jahnke
-140,Dont'e Thornton,WR,Jennifer Eakins
-141,Dalton Kincaid,TE,Rich Hribar
-142,Dylan Sampson,RB,Ray Garvin
-143,Jaylen Wright,RB,Ian Hartitz
-144,Quentin Johnston,WR,Matt Harmon
+pick,player,position,team,season,team_right,position_right,depth_chart_position,jersey_number,status,first_name,last_name,birth_date,height,weight,college,player_id,espn_id,sportradar_id,yahoo_id,rotowire_id,pff_id,pfr_id,fantasy_data_id,sleeper_id,years_exp,headshot_url,esb_id,gsis_it_id,smart_id,entry_year,rookie_year,draft_club,ngs_position,week,game_type,status_description_abbr,football_name,draft_number
+38,RJ Harvey,RB,Derek Brown,2025,DEN,RB,RB,12,ACT,Robert,Harvey,2001-02-04,69.0,205,UCF; Virginia,00-0040730,4568490,fc6dbb83-b2b1-4962-b793-e79b2378b525,,18522,99622,HarvRJ00,25944,12489,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/i1qxzydetb2orrynzvzk",HAR819909,58265,32004841-5281-9909-a72d-cc3e41956f3a,2025,2025,DEN,RB,21,CON,A01,R.J.,60
+98,Rhamondre Stevenson,RB,Ian Hartitz,2021,NE,RB,RB,38,ACT,Rhamondre,Stevenson,1998-02-23,72.0,246,Oklahoma,00-0036875,4569173,6260e78a-64e2-4f7e-9bf8-39948a17a370,33508,15372,98689,StevRh00,,7611,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/igwbptxstony9xbzdwnn",STE703131,53549,32005354-4570-3131-4f2a-53760868c1d8,2021,2021,NE,RB,19,WC,A01,Rhamondre,120
+134,Dak Prescott,QB,Derek Brown,2016,DAL,QB,QB,4,ACT,Rayne,Prescott,1993-07-29,74.0,230,Mississippi State,00-0033077,2577417,86197778-8d4b-4eba-affe-08ef7be7c70b,29369,11008,10769,PresDa01,18055,3294,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/httrtiv5us06hh6asf07",PRE285723,43424,32005052-4528-5723-d1b2-96e92ebc1241,2016,2016,DAL,QB,19,DIV,A01,Dak,135
+60,James Conner,RB,Justin Boone,2017,PIT,RB,RB,30,RES,James,Conner,1995-05-05,73.0,233,Pittsburgh,00-0033553,3045147,28a084c0-14df-499f-bd1f-b975603626b7,30218,11691,11860,ConnJa00,18983,4137,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/g7f2fameplu2lllzpp75",CON461999,44917,3200434f-4e46-1999-59e9-253cedeec3a5,2017,2017,PIT,,19,DIV,,James,
+36,Breece Hall,RB,Justin Boone,2022,NYJ,RB,RB,20,RES,Breece,Hall,2001-05-31,73.0,220,Iowa State,00-0038120,4427366,db1053d7-3343-43a3-9aab-8353f10f1221,,15810,,,,8155,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/xcuixhewoo00o7frboye",HAL189796,54501,32004841-4c18-9796-85f0-25933f010ae8,2022,2022,NYJ,,18,REG,R01,Breece,36
+10,Ashton Jeanty,RB,Ben Gretch,2025,LV,RB,RB,2,ACT,Ashton,Jeanty,2003-12-02,68.0,215,Boise State,00-0040122,4890973,320fc4b7-76c7-43af-bbfd-1a22ba8f78cb,,18487,157196,JeanAs00,25868,12527,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/syspis1mntov9kgspb7r",JEA427291,58208,32004a45-4142-7291-3a65-da29eaedce27,2025,2025,LV,RB,18,REG,A01,Ashton,6
+27,Chase Brown,RB,Ray Garvin,2023,CIN,RB,RB,30,ACT,Chase,Brown,2000-03-21,69.0,205,Illinois,00-0038597,,d74ff06d-905d-4fed-8f98-b5f6d4549333,40196,16934,,BrowCh10,,9224,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/jqjvgchj9mxigofrx0gv",BRO340581,56028,32004252-4f34-0581-a205-5f41836f80e9,2023,2023,CIN,RB,18,REG,A01,Chase,163
+35,George Kittle,TE,Derek Brown,2017,SF,TE,TE,85,ACT,George,Kittle,1993-10-09,76.0,247,Iowa,00-0033288,3040151,2ada91b0-036e-454f-83c3-6d939ff584a9,30259,11892,11901,KittGe00,19063,4217,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/n5dvz5zxymahzxnl4cq3",KIT388290,44959,32004b49-5438-8290-eeed-c9c9cca62ec1,2017,2017,SF,TE,17,REG,A01,George,146
+7,Christian McCaffrey,RB,Chris Allen,2017,CAR,RB,RB,22,ACT,Christian,McCaffrey,1996-06-07,71.0,205,Stanford,00-0033280,3117251,f96db0af-5e25-42d1-a07a-49b4e065b364,30121,11690,11763,McCaCh01,18877,4034,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/fbmd42eh96156aug14kp",MCC035988,44820,32004d43-4303-5988-790d-0077d6a4692b,2017,2017,CAR,RB,18,WC,A01,Christian,8
+41,James Cook,RB,Dave Kluge,2022,BUF,RB,RB,28,ACT,James,Cook,1999-09-25,71.0,190,Georgia,00-0037248,4379399,ce5de0e5-9f76-42ee-b93a-3ef88af9b0a7,,15876,,,,8138,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/hh0bnf0lr6lzwyceorwj",COO151970,54528,3200434f-4f15-1970-d2e5-e575c819187c,2022,2022,BUF,RB,20,DIV,A01,James,63
+13,Nico Collins,WR,Justin Boone,2021,HOU,WR,WR,12,ACT,Nico,Collins,1999-03-19,76.0,222,Michigan,00-0036554,4258173,bd56a50c-5fae-4ee2-8363-f74ae07b6887,,15200,61441,CollNi00,,7569,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/qls2a7h4ujxn7m4fj05y",COL654119,53518,3200434f-4c65-4119-2a51-095ba724d414,2021,2021,HOU,WR,18,REG,A01,Nico,89
+12,Malik Nabers,WR,Justin Boone,2024,NYG,WR,WR,1,ACT,Malik,Nabers,2003-07-28,72.0,195,Louisiana State,00-0039337,4595348,55ef2022-50c2-465b-839e-c0f4c9e7c55c,40899,17704,,NabeMa00,,11632,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/w3edoyyuomqlovvp9ixc",NAB400459,57127,32004e41-4240-0459-a77d-033b6932cbbb,2024,2024,NYG,WR,18,REG,A01,Malik,6
+114,Mark Andrews,TE,Chris Allen,2018,BAL,TE,TE,89,ACT,Mark,Andrews,1995-09-06,76.0,255,Oklahoma,00-0034753,3116365,0618f387-9b72-4270-8b8f-dec4cccc9e4a,31056,12559,47436,AndrMa00,19803,5012,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/rx3nyhawhvj9lddniknj",AND701433,46155,3200414e-4470-1433-75dd-307507e53173,2018,2018,BAL,SLOT_WR,18,WC,A01,Mark,86
+100,Patrick Mahomes,QB,Rich Hribar,2017,KC,QB,QB,15,ACT,Patrick,Mahomes,1995-09-17,74.0,230,Texas Tech,00-0033873,3139477,11cad59d-90dd-449c-a839-dddaba4fe16c,30123,11839,11765,MahoPa00,18890,4046,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/ugt3pz3jk8v1cbuvj3om",MAH401939,44822,32004d41-4840-1939-e4c1-bb89191b4e71,2017,2017,KC,,18,WC,A01,Patrick,10
+70,Rome Odunze,WR,Ray Garvin,2024,CHI,WR,WR,15,ACT,Rome,Odunze,2002-04-03,75.0,215,Washington,00-0039919,4431299,f64694e0-0381-11ef-973d-5176a0ecbee4,40901,17020,,OdunRo00,,11620,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/labs8tstecnehvzfmrs5",ODU426541,57130,32004f44-5542-6541-431c-1a51e8792659,2024,2024,CHI,WR,18,REG,A01,Rome,9
+26,Josh Allen,QB,Ian Hartitz,2014,TB,C,,61,ACT,Joshua,Allen,1991-12-30,75.0,315,Louisiana-Monroe,00-0030833,,,,,,,,,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/vs1gvoadc6we63prkatk",ALL529825,41671,3200414c-4c52-9825-55b3-86858b89ee0c,2014,2014,,,17,REG,A01,Josh,
+63,Zay Flowers,WR,Ben Gretch,2023,BAL,WR,WR,4,ACT,Xavien,Flowers,2000-09-11,69.0,172,Boston College,00-0039064,,2b6d74b7-10fb-4f17-99c8-9bb557fb475b,40039,16919,,FlowZa00,,9997,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/zvstl5cycvmbbqczemau",FLO577002,55886,3200464c-4f57-7002-1160-832e9618f0fd,2023,2023,BAL,WR,21,CON,A01,Zay,22
+6,Jahmyr Gibbs,RB,Nathan Jahnke,2023,DET,RB,RB,26,ACT,Jahmyr,Gibbs,2002-03-20,69.0,200,Alabama,00-0039139,,fef9457e-6497-47de-9bf2-cc3b95929375,40059,16808,,GibbJa01,,9221,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/zv22khikt05uc5fzzby9",GIB198578,55876,32004749-4219-8578-ca06-2b870fe6f731,2023,2023,DET,RB,21,CON,A01,Jahmyr,12
+80,Ricky Pearsall,WR,Dave Kluge,2024,SF,WR,WR,14,ACT,Ricky,Pearsall,2000-09-09,73.0,190,Florida,00-0039916,4428209,aca4c1b8-915f-4295-92e4-05b51feee6b1,40892,17761,,PearRi00,,11638,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/akwepvt6qxwbgankljmv",PEA307677,57152,32005045-4130-7677-7b9e-0f0ef8659c89,2024,2024,SF,WR,18,REG,A01,Ricky,31
+83,Jayden Higgins,WR,Derek Brown,2025,HOU,WR,WR,81,ACT,Jayden,Higgins,2002-12-15,76.0,215,Iowa State; Eastern Kentucky,00-0040130,4877706,f55444a9-ccad-4343-bb03-caca6ea3de99,,18551,150240,HiggJa00,26094,12484,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wrdw1u4onrmfuuluuipk",HIG228409,58239,32004849-4722-8409-9777-0ef748df904a,2025,2025,HOU,WR,20,DIV,A01,Jayden,34
+68,David Montgomery,RB,Jennifer Eakins,2019,CHI,RB,RB,32,ACT,David,Montgomery,1997-06-07,70.0,222,Iowa State,00-0035685,4035538,1c9e1cd5-8cb1-4a15-a2c8-3a0c0fd5423c,31905,13556,45719,MontDa01,20882,5892,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/m4qxpoboxzjdluklqrtf",MON487374,47856,32004d4f-4e48-7374-a044-7fb197b6b501,2019,2019,CHI,RB,17,REG,A01,David,73
+123,Dallas Goedert,TE,Ray Garvin,2018,PHI,TE,TE,88,ACT,Dallas,Goedert,1995-01-03,77.0,260,South Dakota State,00-0034351,3121023,e8029983-87cf-49a2-bc04-04c8233a0630,31019,12860,47272,GoedDa00,19863,5022,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/bekz0emretqdor3engkr",GOE595520,46118,3200474f-4559-5520-b7af-5e002aedafbb,2018,2018,PHI,TE,19,DIV,A01,Dallas,49
+59,Kaleb Johnson,RB,Derek Brown,2015,BLT,G,,62,ACT,Kaleb,Johnson,1993-02-22,76.0,316,Rutgers,00-0031766,,,,,,,,,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/vzaokxdtcuwng2okjrfj",JOH398785,42797,32004a4f-4839-8785-7b9f-ff40c5039852,2015,2015,,,13,REG,I01,Kaleb,
+141,Dalton Kincaid,TE,Rich Hribar,2023,BUF,TE,TE,86,ACT,Dalton,Kincaid,1999-10-18,76.0,240,Utah,00-0038933,,b961fa15-0676-4948-b95f-56d06319d40e,40048,16697,,KincDa00,,10236,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/gc2do3ceqflw2axa6xii",KIN069130,55889,32004b49-4e06-9130-e563-7edd228031c8,2023,2023,BUF,SLOT_WR,20,DIV,A01,Dalton,25
+115,Cooper Kupp,WR,Nathan Jahnke,2017,LA,WR,WR,18,ACT,Cooper,Kupp,1993-06-15,73.0,205,Eastern Washington,00-0033908,2977187,2806e915-c46f-492f-8a29-71d3a85e5620,30182,11863,11824,KuppCo00,18882,4039,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/kfmofyneoponii4twxdq",KUP534597,44881,32004b55-5053-4597-b958-87408c31956f,2017,2017,LA,SLOT_WR,18,WC,A01,Cooper,69
+76,Stefon Diggs,WR,Rich Hribar,2015,MIN,WR,,14,ACT,Stefon,Diggs,1993-11-29,72.0,191,Maryland,00-0031588,2976212,a1c40664-b265-4083-aad2-54b4c734f2c5,28534,10133,9579,DiggSt00,16906,2449,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/zf6nbnzcfzu4y7yq2nzk",DIG218895,42489,32004449-4721-8895-fc23-d2bf4c921bd4,2015,2015,MIN,,18,WC,A01,Stefon,146
+127,Christian Kirk,WR,Chris Allen,2018,ARI,WR,WR,13,RES,Christian,Kirk,1996-11-18,71.0,200,Texas A&amp;M,00-0034775,3895856,ebcd87ce-218c-4144-810b-921c2f59d6e8,31017,12508,47546,KirkCh01,19815,4950,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/xhicurlusjfytzmkrfo9",KIR257918,46116,32004b49-5225-7918-e402-81feed3bdafb,2018,2018,ARI,,17,REG,,Christian,
+4,Bijan Robinson,RB,Rich Hribar,2023,ATL,RB,RB,7,ACT,Bijan,Robinson,2002-01-30,71.0,214,Texas,00-0038542,,f78d68c2-f9da-48e7-b954-26b69efd828d,40055,16739,,RobiBi01,,9509,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/gatvdlb0kch6kyhhpu4c",ROB368260,55872,3200524f-4236-8260-6d5f-ae47fe2e0128,2023,2023,ATL,RB,18,REG,A01,Bijan,8
+113,Travis Kelce,TE,Dave Kluge,2013,KC,TE,,87,RES,Travis,Kelce,1989-10-05,77.0,260,Cincinnati,00-0030506,15847,c3859e06-5f23-4302-a71b-04820a899d5f,26686,8783,7844,KelcTr00,15048,1466,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/ryzr3vbragwe50vtj9af",KEL012458,40011,32004b45-4c01-2458-b7b6-3a14cdb414dd,2013,2013,KC,,5,REG,I01,Travis,63
+15,Brock Bowers,TE,Ben Gretch,2024,LV,TE,TE,89,ACT,Brock,Bowers,2002-12-13,76.0,230,Georgia,00-0039338,4432665,ad9fc7e3-0a6d-4e41-84c2-cf43b71aee13,40878,17693,,BoweBr01,,11604,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mjy86xh8munoiur4hejf",BOW196560,57134,3200424f-5719-6560-aaaa-d9f4cc244721,2024,2024,LV,SLOT_WR,18,REG,A01,Brock,13
+43,Jalen Hurts,QB,Nathan Jahnke,2020,PHI,QB,QB,2,ACT,Jalen,Hurts,1998-08-07,73.0,218,Oklahoma,00-0036389,4040715,64bd0f02-6a5d-407e-98f1-fd02048ea21d,32723,14416,40291,HurtJa00,21831,6904,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/gpz9zs474snz3jntrpbd",HUR767022,52461,32004855-5276-7022-85cf-a74490936f42,2020,2020,PHI,QB,17,REG,A01,Jalen,53
+30,Trey McBride,TE,Nathan Jahnke,2022,ARI,TE,TE,85,ACT,Trey,McBride,1999-11-22,75.0,245,Colorado State,00-0037744,4361307,734d54cc-c869-4e2f-a60f-c59c493f5110,,15902,,,,8130,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/qawwcnmfggwgsemqwwki",MCB743360,54520,32004d43-4274-3360-cc50-43990383247d,2022,2022,ARI,TE,18,REG,A01,Trey,55
+26,Josh Allen,QB,Ian Hartitz,2018,BUF,QB,QB,17,ACT,Joshua,Allen,1996-05-21,77.0,240,Wyoming,00-0034857,3918298,3069db07-aa43-4503-ab11-2ae5c0002721,30977,12483,46601,AlleJo02,19801,4984,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/uyhjaf2okyygjyfzk8hc",ALL529264,46076,3200414c-4c52-9264-bedc-c4ddaf201fe7,2018,2018,BUF,QB,17,REG,A01,Josh,7
+86,Cam Skattebo,RB,Derek Brown,2025,NYG,RB,RB,44,RES,Cameron,Skattebo,2002-02-05,71.0,215,Arizona State; Sacramento State,00-0040715,4696981,e1f0c72d-f4d0-4c24-93a4-8a12b9a2efd2,,18514,147787,SkatCa00,25887,12481,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vnftthkbvw7ucsqtqjpq",SKA578439,58310,3200534b-4157-8439-e202-fa5ff0631271,2025,2025,NYG,,18,REG,R01,Cam,105
+54,Jameson Williams,WR,Nathan Jahnke,2022,DET,WR,WR,9,ACT,Jameson,Williams,2001-03-26,73.0,189,Alabama,00-0037240,4426388,590adb00-5598-47ad-b6d4-16a6c5519847,,15849,,,,8148,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/kfieht3mru8nd2itoi4a",WIL344909,54477,32005749-4c34-4909-bc5e-bde59d1a8826,2022,2022,DET,WR,18,REG,A01,Jameson,12
+133,Kyle Williams,WR,Justin Boone,2025,NE,WR,WR,18,ACT,Kyle,Williams,2002-11-13,71.0,190,Washington State,00-0040131,4613202,3aa9330e-5201-4e99-ba55-0102f76bfe05,,19126,128374,WillKy03,25912,12547,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/bu31c2ino065kazsn541",WIL415226,58274,32005749-4c41-5226-76ac-b1583a06b9ec,2025,2025,NE,WR,22,SB,A01,Kyle,69
+52,Jaylen Waddle,WR,Rich Hribar,2021,MIA,WR,WR,17,ACT,Jaylen,Waddle,1998-11-25,70.0,182,Alabama,00-0036613,4372016,0ff9a975-669d-4851-a95d-ab28d9fc29c4,33394,15404,84088,WaddJa00,,7526,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/hkwyhd9w8pouxwhqn6ly",WAD088683,53435,32005741-4408-8683-c826-c882ad6fd5c2,2021,2021,MIA,WR,18,REG,A01,Jaylen,6
+136,Cedric Tillman,WR,Ryan Heath,1992,DEN,WR,WR,0,ACT,Cedric,Tillman,1970-07-22,74.0,204,,00-0016472,,,,,,,,,,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/lp8lglecrgbzeovryfvm",TIL379692,,32005449-4c37-9692-f00e-0b098dc0f954,,,,,,,,,
+129,Colston Loveland,TE,Ryan Heath,2025,CHI,TE,TE,84,ACT,Colston,Loveland,2004-04-09,78.0,245,Michigan,00-0040126,4723086,62cd2cd5-8b40-4ee6-bfb8-0083edd105a2,,18460,158540,LoveCo00,25869,12517,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tyjb6vfug7gaunvcune3",LOV456221,58212,32004c4f-5645-6221-1f26-a303114b69f8,2025,2025,CHI,TE,20,DIV,A01,Colston,10
+111,T.J. Hockenson,TE,Ben Gretch,2019,DET,TE,TE,88,RES,T.J.,Hockenson,1997-07-03,77.0,247,Iowa,00-0035229,4036133,bd1120b6-38b3-4225-a4b0-20660a149d0d,31840,13610,40912,HockTJ00,20805,5844,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/zodb4z1lbkw6hkxpvpgq",HOC422041,47791,3200484f-4342-2041-c442-6c874885b155,2019,2019,DET,,17,REG,,T.J.,
+87,Brandon Aiyuk,WR,Ben Gretch,2020,SF,WR,WR,11,INA,Brandon,Aiyuk,1998-03-17,72.0,206,Arizona State,00-0036261,4360438,c90471cc-fa60-4416-9388-5aebb5d877eb,32695,14386,84109,AiyuBr00,21747,6803,0,,AIY189231,52433,32004149-5918-9231-4476-63b611051b08,2020,2020,SF,,17,REG,A01,Brandon,25
+26,Josh Allen,QB,Ian Hartitz,2019,JAX,DL,DE,41,ACT,Joshua,Allen,1997-07-13,77.0,262,Kentucky,00-0035642,3915239,dd7be5f3-c615-4621-92e1-2434519cb1f9,31839,13642,50235,AlleJo03,20737,5840,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/toi3pm7v7crijy6fthnj",ALL528759,47790,3200414c-4c52-8759-5d19-904fa0fc8823,2019,2019,JAX,EDGE,17,REG,A01,Josh,7
+11,Brian Thomas Jr.,WR,Derek Brown,2024,JAX,WR,WR,7,ACT,Brian,Thomas,2002-10-08,74.0,205,Louisiana State,00-0039893,4432773,271a233e-68b3-4261-a3aa-7667eaf9d3cc,40883,17716,,ThomBr06,,11631,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gsz15iz0ppibhslzzgch",THO419793,57144,32005448-4f41-9793-7e94-7811f8a76eb2,2024,2024,JAX,WR,18,REG,A01,Brian,23
+92,Khalil Shakir,WR,Jennifer Eakins,2022,BUF,WR,WR,10,ACT,Khalil,Shakir,2000-02-03,72.0,190,Boise State,00-0037261,4373678,0ce9ddce-bdf6-469c-8a32-9cf0ed3714a4,,15892,,,,8134,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/qoltpowkukxjs5xtpn8a",SHA107427,54613,32005348-4110-7427-f34a-bb0aa1d8e556,2022,2022,BUF,SLOT_WR,20,DIV,A01,Khalil,148
+93,Darnell Mooney,WR,Rich Hribar,2020,CHI,WR,WR,11,INA,Darnell,Mooney,1997-10-29,71.0,172,Tulane,00-0036309,4040655,bafe8df1-66b5-4200-8fb3-ff188c25a4e2,32843,14510,48236,MoonDa00,21961,7090,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/sxldzvwuh31gcmbiuavt",MOO076900,52581,32004d4f-4f07-6900-2883-f3ddae0181d4,2020,2020,CHI,,18,WC,A01,Darnell,173
+81,Josh Downs,WR,Ryan Heath,2023,IND,WR,WR,1,ACT,Joshua,Downs,2001-08-12,69.0,175,North Carolina,00-0038997,,dd227f4a-0785-482d-a28b-f231c7f3b73f,40126,16689,,DownJo00,,9500,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/wdrwbumtvwv8s9te8wof",DOW686145,55944,3200444f-5768-6145-dd60-3fbae406310a,2023,2023,IND,SLOT_WR,18,REG,A01,Josh,79
+99,Keon Coleman,WR,Ray Garvin,2024,BUF,WR,WR,0,ACT,Keon,Coleman,2003-05-17,76.0,215,Florida State,00-0039901,4635008,6752915f-efe5-473d-a520-78cadfab6dda,40911,17732,,ColeKe02,,11637,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ipwpdgb0cm3xy3d8zu1l",COL295571,57154,3200434f-4c29-5571-54fa-77236b775ae1,2024,2024,BUF,WR,21,CON,A01,Keon,33
+62,Calvin Ridley,WR,Derek Brown,2018,ATL,WR,WR,18,ACT,Calvin,Ridley,1994-12-20,73.0,190,Alabama,00-0034837,3925357,926e2674-52d6-4cec-9991-46ee85cc8cfd,30996,12616,48262,RidlCa00,19802,4981,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/r8hye4mvynz7fxbfooxw",RID652384,46095,32005249-4465-2384-7253-3a4b46622aa9,2018,2018,ATL,WR,17,REG,A01,Calvin,26
+104,Kyler Murray,QB,Dave Kluge,2019,ARI,QB,QB,1,ACT,Kyler,Murray,1997-08-07,70.0,207,Oklahoma,00-0035228,3917315,dd5a6b6e-ffae-45a5-b8e6-718a9251f374,31833,13613,38334,MurrKy00,20889,5849,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/xg9gslvksigyhrkos7xu",MUR670413,47784,32004d55-5267-0413-8d36-a5c3fd781aa0,2019,2019,ARI,QB,17,REG,A01,Kyler,1
+117,Ray Davis,RB,Rich Hribar,2024,BUF,RB,RB,22,ACT,Re'Mahn,Davis,1999-11-20,68.0,216,Kentucky,00-0039875,4429501,a856dd59-ed95-471a-bfb9-fbd0566bd1a9,40980,17792,,DaviRa04,,11575,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xm8csnleyxsop4pldyby",DAV632804,57249,32004441-5663-2804-a8ce-2174ee79562e,2024,2024,BUF,RB,21,CON,A01,Ray,128
+101,Zach Charbonnet,RB,Jennifer Eakins,2023,SEA,RB,RB,26,ACT,Zach,Charbonnet,2001-01-08,73.0,220,UCLA,00-0039165,,7d7f1628-85a7-4633-9ffe-d82fc2761b00,40075,16897,,CharZa00,,9753,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/yuddw2o5skwkgvut6wrv",CHA548773,55917,32004348-4154-8773-f098-b6f992d916a2,2023,2023,SEA,RB,18,REG,A01,Zach,52
+108,Trey Benson,RB,Justin Boone,2024,ARI,RB,RB,33,RES,Trey,Benson,2002-07-23,73.0,215,Florida State,00-0039921,4429275,0c1253f2-1822-445d-8590-fea6fd32703f,40958,17767,,BensTr01,,11589,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/iu0gbspz3kjdqlazvtkn",BEN649191,57187,32004245-4e64-9191-567b-28b29177bf93,2024,2024,ARI,,18,REG,R01,Trey,66
+14,Drake London,WR,Derek Brown,2022,ATL,WR,WR,5,ACT,Drake,London,2001-07-24,76.0,210,Southern California,00-0037238,4426502,5053f9ae-15d9-4730-833d-484886b6f890,,15868,,,,8112,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/rrwzcsvsfqq9xptp8o48",LON013463,54473,32004c4f-4e01-3463-a3e9-f95e800c8bba,2022,2022,ATL,WR,18,REG,A01,Drake,8
+143,Jaylen Wright,RB,Ian Hartitz,2024,MIA,RB,RB,25,ACT,Jaylen,Wright,2003-04-01,71.0,210,Tennessee,00-0039874,4682745,ba9e1390-028b-47c9-8710-84cee3fa25de,41010,17800,,WrigJa04,,11643,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ib9s3nvt4i1i5wh11t4f",WRI398099,57241,32005752-4939-8099-f6ee-7772cc125a42,2024,2024,MIA,RB,18,REG,A01,Jaylen,120
+118,J.J. McCarthy,QB,Ray Garvin,2024,MIN,QB,QB,9,RES,Jonathan,McCarthy,2003-01-20,75.0,202,Michigan,00-0039923,4433970,587cc3c3-aeda-4ac7-8803-a7e4db195534,40905,17689,,McCaJJ00,,11565,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/t4ncswnffrpzp0jtldmx",MCC189531,57131,32004d43-4318-9531-b3f5-120a14383239,2024,2024,MIN,,19,WC,R01,J.J.,10
+23,Josh Jacobs,RB,Ian Hartitz,2019,OAK,RB,RB,28,INA,Joshua,Jacobs,1998-02-11,70.0,220,Alabama,00-0035700,4047365,61694ab9-b099-408e-b48d-6a643dd069ec,31856,13582,45953,JacoJo01,20824,5850,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/awi1bqhbh74f2lpvzayr",JAC734615,47823,32004a41-4373-4615-60ca-982d07046841,2019,2019,OAK,,17,REG,A01,Josh,24
+19,Bucky Irving,RB,Nathan Jahnke,2024,TB,RB,RB,7,ACT,Mar'Keise,Irving,2002-08-19,70.0,195,Oregon,00-0039361,4596448,c5249c6f-bd1b-4352-8228-de2bd499ca0d,40993,17784,,IrviBu00,,11584,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wjaqkrtdhwf16wldi83h",IRV731762,57246,32004952-5673-1762-cc21-a0207d2553dd,2024,2024,TB,RB,19,WC,A01,Bucky,125
+136,Cedric Tillman,WR,Ryan Heath,2023,CLE,WR,WR,19,INA,Cedric,Tillman,2000-04-19,75.0,215,Tennessee,00-0038979,,148330d9-5182-4b58-b695-8067aaba4731,40093,16706,,TillCe01,,10444,0,,TIL377067,55939,32005449-4c37-7067-218b-007e17161edd,2023,2023,CLE,,19,WC,A01,Cedric,74
+58,Travis Hunter,WR,Ben Gretch,2025,JAX,WR,WR,12,RES,Travis,Hunter,2003-05-18,73.0,185,Colorado; Jackson State University,00-0040718,4685415,4a975d4c-d7cd-45ef-b258-db45187140eb,,18578,160766,HuntTr00,26056,12530,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/apfzii6u8pwj9ntvyfkk",HUN816230,58204,32004855-4e81-6230-a487-ca19d012c037,2025,2025,JAX,,19,WC,R01,Travis,2
+144,Quentin Johnston,WR,Matt Harmon,2023,LAC,WR,WR,1,ACT,Quentin,Johnston,2001-09-06,76.0,201,Texas Christian,00-0038544,,e648bc98-bc81-44d0-8d4b-b9223c497ff4,40051,16899,,JohnQu02,,9754,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/eamj83siagr6rba0epv0",JOH823261,55885,32004a4f-4882-3261-dcd8-a43c8f7c5608,2023,2023,LAC,WR,18,REG,A01,Quentin,21
+3,Justin Jefferson,WR,Ray Garvin,2026,CLE,LB,MLB,17,ACT,Justin,Jefferson,2003-03-20,72.0,223,Alabama,00-0041075,5150249,a8a90d29-7f7e-40d1-815d-fc692ecf75a7,,19547,,JeffJu01,28099,13524,0,,JEF270909,62771,32004a45-4627-0909-8540-234e0dcf139e,2026,2026,CLE,,2,REG,A01,Justin,149
+110,Tank Bigsby,RB,Derek Brown,2023,JAX,RB,RB,4,ACT,Cartavious,Bigsby,2001-08-30,72.0,213,Auburn,00-0038555,,2034916c-8062-46e3-8d0c-d0dec694e2d1,40095,16705,,BigsTa00,,9225,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/yndvsfcpy4ejgx9cnms3",BIG732544,55953,32004249-4773-2544-d042-8e63f2fc44d8,2023,2023,JAX,RB,18,REG,A01,Tank,88
+88,Aaron Jones,RB,Ryan Heath,2017,GB,RB,RB,33,ACT,Aaron,Jones,1994-12-02,69.0,208,Texas-El Paso,00-0033293,3042519,27dd5b6e-ea65-4622-a6b4-460fd144407c,30295,11763,11937,JoneAa00,19045,4199,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/emz1peuzt25fsvbhdshg",JON026624,44995,32004a4f-4e02-6624-33bd-3ba151b7013d,2017,2017,GB,,17,REG,A01,Aaron,182
+31,Garrett Wilson,WR,Chris Allen,2022,NYJ,WR,WR,17,ACT,Garrett,Wilson,2000-07-22,72.0,192,Ohio State,00-0037740,4569618,68d72fe0-79b2-4fdb-afd5-6c79676e77f3,,15829,,,,8146,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/gqdfigo9nzji4e6nshpk",WIL691962,54475,32005749-4c69-1962-4085-d9c826d8709c,2022,2022,NYJ,WR,18,REG,A01,Garrett,10
+61,Chris Olave,WR,Justin Boone,2022,NO,WR,WR,12,ACT,Chris,Olave,2000-06-27,73.0,185,Ohio State,00-0037239,4361370,2375d572-a36c-4365-bb3f-87e156526e2f,,15895,,,,8144,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/fh4mzrgbiqemhomzpukt",OLA659325,54476,32004f4c-4165-9325-c259-01a521202e2f,2022,2022,NO,WR,18,REG,A01,Chris,11
+122,David Njoku,TE,Ian Hartitz,2017,CLE,TE,TE,85,ACT,David,Njoku,1996-07-10,76.0,246,Miami,00-0033885,3123076,8f86fcea-90e8-49ea-bc78-5c7659313e57,30142,11734,11784,NjokDa00,18876,4033,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/qiehmamkrrmrcrpqoxvd",NJO355964,44841,32004e4a-4f35-5964-1f03-4dc0b4e0b757,2017,2017,CLE,TE,17,REG,A01,David,29
+121,Jaydon Blue,RB,Matt Harmon,2025,DAL,RB,RB,23,ACT,Jaydon,Blue,2004-01-08,69.0,200,Texas,00-0040586,4685279,f5e6eb8e-2c76-4bf9-b47f-57c62659341d,,18499,157303,BlueJa01,26038,12457,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jhbmit7yp8dlhepncsvp",BLU326186,58354,3200424c-5532-6186-a82d-38322b898c1f,2025,2025,DAL,RB,18,REG,A01,Jaydon,149
+139,Braelon Allen,RB,Nathan Jahnke,2024,NYJ,RB,RB,0,ACT,Braelon,Allen,2004-01-20,73.0,235,Wisconsin,00-0039794,4685247,d7f72deb-c1e2-47a2-b651-887f0e33dc44,40981,17702,,AlleBr05,,11576,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/p0fylkec7poarrjosefz",ALL063734,57255,3200414c-4c06-3734-6e11-4c57194f79b4,2024,2024,NYJ,RB,18,REG,A01,Braelon,134
+67,Jordan Addison,WR,Nathan Jahnke,2023,MIN,WR,WR,3,ACT,Jordan,Addison,2002-01-27,71.0,175,Southern California,00-0038994,,63fdd64e-1a23-4b77-9536-b1609f3a708c,40042,16895,,AddiJo00,,9756,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/zhyhkz6wzwhioemhqgbk",ADD491056,55887,32004144-4449-1056-9ba9-b09766bad478,2023,2023,MIN,WR,18,REG,A01,Jordan,23
+20,Derrick Henry,RB,Jennifer Eakins,2016,TEN,RB,RB,22,ACT,Derrick,Henry,1994-01-04,74.0,247,Alabama,00-0032764,3043078,87c481c7-7414-43cc-82df-19ca0c2ae22e,29279,10819,10679,HenrDe00,17959,3198,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/vygpdc31jwc0zrusaeg5",HEN602843,43334,32004845-4e60-2843-9b64-3cd8fac319c3,2016,2016,TEN,RB,17,REG,A01,Derrick,45
+33,Jayden Daniels,QB,Ryan Heath,2024,WAS,QB,QB,5,ACT,Jayden,Daniels,2000-12-18,76.0,210,Louisiana State,00-0039910,4426348,bab8c65a-9fff-410d-8e34-dc2f636d890e,40896,17692,,DaniJa02,,11566,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mh9rkwpmq1rgfarg9rpm",DAN567618,57123,32004441-4e56-7618-ab61-f08cbf558acd,2024,2024,WAS,QB,21,CON,A01,Jayden,2
+47,Tetairoa McMillan,WR,Ian Hartitz,2025,CAR,WR,WR,4,ACT,Tetairoa,McMillan,2003-04-05,77.0,212,Arizona,00-0040124,4685472,874de000-586c-4999-ac12-02766563e200,,18547,158735,McMiTe00,26054,12526,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hokqp6gl5xujtlqwecg8",MCM514957,58210,32004d43-4d51-4957-830f-234e646a998f,2025,2025,CAR,WR,19,WC,A01,Tetairoa,8
+55,Xavier Worthy,WR,Chris Allen,2024,KC,WR,WR,1,ACT,Xavier,Worthy,2003-04-27,71.0,172,Texas,00-0039894,4683062,52e049b1-0a7a-4e7f-9866-d2848e9cc478,40877,17687,,WortXa00,,11624,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fvzbx5gpiqkogglyoo1w",WOR741496,57149,3200574f-5274-1496-c9ca-5c4709faa05b,2024,2024,KC,WR,22,SB,A01,Xavier,28
+125,Baker Mayfield,QB,Jennifer Eakins,2018,CLE,QB,QB,6,ACT,Baker,Mayfield,1995-04-14,73.0,220,Oklahoma,00-0034855,3052587,30198d30-9769-4e10-ac86-b4c91d940802,30971,12619,46518,MayfBa00,19790,4892,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/mrajlbudbl0hcfzmrqz3",MAY483453,46073,32004d41-5948-3453-e6ac-1ecff99fdcf6,2018,2018,CLE,QB,17,REG,A01,Baker,1
+95,Jordan Mason,RB,Ian Hartitz,2022,SF,RB,RB,24,ACT,Jordan,Mason,1999-05-24,71.0,218,Georgia Tech,00-0037525,,af9f7390-ca80-11ec-97ae-e1573849d1a6,,16163,,,,8408,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/siy6cm1nrvftegskwnnr",MAS125056,55113,32004d41-5312-5056-fafb-b3b690e395a1,2022,2022,,RB,21,CON,A01,Jordan,
+130,Bo Nix,QB,Ben Gretch,2024,DEN,QB,QB,10,ACT,Bo,Nix,2000-02-25,74.0,217,Oregon,00-0039732,4426338,f056c8ed-6ee5-492c-af11-3f7e3d97195c,40875,16995,,NixxBo00,,11563,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zibtvsprpauxnytis229",NIX118212,57133,32004e49-5811-8212-6abe-fc1a8b4f4942,2024,2024,DEN,QB,19,WC,A01,Bo,12
+29,Davante Adams,WR,Jennifer Eakins,2014,GB,WR,,17,ACT,Davante,Adams,1992-12-24,73.0,215,Fresno State,00-0031381,16800,e7d6ae25-bf15-4660-8b37-c37716551de3,27581,9455,8688,AdamDa01,16470,2133,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/grvqvmdzu2lsbgvqoxku",ADA218591,41282,32004144-4121-8591-4d26-4c0ac739af41,2014,2014,GB,,20,CON,A01,Davante,53
+48,Alvin Kamara,RB,Matt Harmon,2017,NO,RB,RB,41,ACT,Alvin,Kamara,1995-07-25,70.0,215,Tennessee,00-0033906,3054850,d9c857b2-97da-4fb8-a527-afbbb2a67413,30180,11732,11822,KamaAl00,18878,4035,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/xs7zkncnl9261b101wo9",KAM244058,44879,32004b41-4d24-4058-5a3b-01bd39e6a25d,2017,2017,NO,RB,19,DIV,A01,Alvin,67
+103,Tyjae Spears,RB,Chris Allen,2023,TEN,RB,RB,32,ACT,Tyjae,Spears,2001-06-15,70.0,195,Tulane,00-0039032,,af71f149-7758-40b7-973a-9fe6320cf4f5,40119,16941,,SpeaTy00,,9508,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/eeh5mowhlf3godvrceym",SPE113961,55946,32005350-4511-3961-6914-5e32243e62c5,2023,2023,TEN,RB,18,REG,A01,Tyjae,81
+69,Isiah Pacheco,RB,Rich Hribar,2022,KC,RB,RB,10,ACT,Isiah,Pacheco,1999-03-02,70.0,215,Rutgers,00-0037197,4361529,3a25c037-fa30-4740-b742-ec8e4f1a2a25,,16104,,,,8205,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/s9suhdxobh0p5nbwxq8t",PAC576791,54716,32005041-4357-6791-9031-d5a8938af2e4,2022,2022,KC,RB,22,SB,A01,Isiah,251
+102,Quinshon Judkins,RB,Nathan Jahnke,2025,CLE,RB,RB,10,RES,Quinshon,Judkins,2003-10-29,72.0,219,Ohio State; Mississippi,00-0040784,4685702,268c6ae2-278b-49f8-b7cd-b367944412f3,,18516,157128,JudkQu00,25946,12512,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ojtce2im0wp2ltyel0vc",JUD359919,58241,32004a55-4435-9919-355b-3e0aef2de56d,2025,2025,CLE,,18,REG,R01,Quinshon,36
+97,Rashod Bateman,WR,Matt Harmon,2021,BAL,WR,WR,12,ACT,Rashod,Bateman,1999-11-29,73.0,210,Minnesota,00-0036550,4360939,d9f8b92b-69d4-4d83-9bf2-106ee523efed,,15210,,BateRa00,,7571,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/vpcmsc93xuzhv4bupbzu",BAT103884,53456,32004241-5410-3884-8ac5-165a4f1f770e,2021,2021,BAL,WR,18,REG,A01,Rashod,27
+2,CeeDee Lamb,WR,Ian Hartitz,2020,DAL,WR,WR,88,ACT,Cedarian,Lamb,1999-04-08,74.0,189,Oklahoma,00-0036358,4241389,a72ea15b-5199-4101-a300-846e1c655add,32687,14411,61570,LambCe00,21679,6786,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/e8ftgnyivmkwtffd6tcr",LAM138457,52425,32004c41-4d13-8457-fcbe-d37fdbd87233,2020,2020,DAL,SLOT_WR,17,REG,A01,CeeDee,17
+64,Jauan Jennings,WR,Ryan Heath,2020,SF,WR,WR,17,DEV,Bennie,Jennings,1997-07-10,75.0,214,Tennessee,00-0036259,3886598,3ae9f0fa-c711-4663-80cf-4707856c07aa,32887,14376,48027,JennJa00,21717,7049,0,,JEN497457,52625,32004a45-4e49-7457-3af8-79760d0083cb,2020,2020,SF,,17,REG,P14,Jauan,217
+66,Joe Burrow,QB,Chris Allen,2020,CIN,QB,QB,9,RES,Joe,Burrow,1996-12-10,76.0,216,Louisiana State,00-0036442,3915511,3023ac10-4e7f-425f-9fc5-2b8e6332c92e,32671,14442,28022,BurrJo01,21693,6770,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/alhbhd5ega2doxogh0dg",BUR679731,52409,32004255-5267-9731-81c8-48673dcec5e2,2020,2020,CIN,,17,REG,R01,Joe,1
+135,Tyler Allgeier,RB,Ben Gretch,2022,ATL,RB,RB,25,ACT,Tyler,Allgeier,2000-04-15,70.0,220,Brigham Young,00-0037263,4373626,f4529909-1a02-4f4b-a1f3-315cad100683,,15976,,,,8132,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/osk8e6vpyxuzkrsalopb",ALL702582,54616,3200414c-4c70-2582-4cca-1a2070c9a090,2022,2022,ATL,RB,18,REG,A01,Tyler,151
+28,Tee Higgins,WR,Rich Hribar,2020,CIN,WR,WR,85,ACT,Tamaurice,Higgins,1999-01-18,76.0,210,Clemson,00-0036410,4239993,7963b029-5de4-4541-b00a-44eefe4349af,32703,14506,61211,HiggTe00,21690,6801,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/xcymtg1vdkbntbzlmbrw",HIG387791,52441,32004849-4738-7791-9f89-d556c4b59b9a,2020,2020,CIN,WR,17,REG,A01,Tee,33
+40,Omarion Hampton,RB,Ryan Heath,2025,LAC,RB,RB,8,ACT,Omarion,Hampton,2003-03-16,72.0,220,North Carolina,00-0040666,4685382,3e1b7908-79ee-4a23-97b9-5190725a2e5e,,18445,162750,HampOm00,25956,12507,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ck7xcbwuka7wu2zwhssk",HAM773946,58224,32004841-4d77-3946-bc04-1f7201601885,2025,2025,LAC,RB,19,WC,A01,Omarion,22
+133,Kyle Williams,WR,Justin Boone,2006,BUF,DT,,95,ACT,Kyle,Williams,1983-06-10,73.0,295,Louisiana State,00-0024348,9720,57c5c69c-844e-41f1-9985-6fc178cee514,7883,5152,3079,WillKy20,2550,94,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/az6qa28sbmxfklqs9waz",WIL415284,30949,32005749-4c41-5284-55d9-a6ab08368f54,2006,2006,BUF,,17,REG,A01,Kyle,134
+119,Najee Harris,RB,Ian Hartitz,2021,PIT,RB,RB,22,ACT,Najee,Harris,1998-03-09,73.0,230,Alabama,00-0036893,4241457,48ec58c3-ec26-4434-b005-8d34035e6667,33412,15468,57121,HarrNa00,,7528,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/lwcct10u7lfzsgtaoqce",HAR493163,53453,32004841-5249-3163-f8f5-73c55f8a5c0d,2021,2021,PIT,RB,19,WC,A01,Najee,24
+132,Caleb Williams,QB,Justin Boone,2024,CHI,QB,QB,18,ACT,Caleb,Williams,2001-11-18,73.0,215,Southern California,00-0039918,4431611,49d4b627-3f19-49a8-ae33-f539e0fb1f88,40900,17695,,WillCa03,,11560,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/idewrhb7kngpdtrvku31",WIL176897,57122,32005749-4c17-6897-a516-9754023602e6,2024,2024,CHI,QB,18,REG,A01,Caleb,1
+79,Jaylen Warren,RB,Chris Allen,2022,PIT,RB,RB,30,ACT,Jaylen,Warren,1998-11-01,68.0,225,Oklahoma State,00-0037228,4569987,7e397190-ca24-11ec-9f1c-b7114d38a85b,,15984,,,,8228,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/q6zstqy99al3sghrufey",WAR659612,54905,32005741-5265-9612-2e68-f9e5f43ac527,2022,2022,,RB,18,REG,A01,Jaylen,
+91,Matthew Golden,WR,Nathan Jahnke,2025,GB,WR,WR,0,ACT,Matthew,Golden,2003-08-01,71.0,195,Texas; Houston,00-0040667,4701936,d1963360-c011-4764-9a36-9e627073f68f,,18500,156165,GoldMa02,25922,12501,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gkbhlytvkltv5whjo3ru",GOL068614,58225,3200474f-4c06-8614-8bd5-a546b4ab4775,2025,2025,GB,WR,19,WC,A01,Matthew,23
+8,Puka Nacua,WR,Dave Kluge,2023,LA,WR,WR,17,ACT,Puka,Nacua,2001-05-29,74.0,205,Brigham Young,00-0039075,,111be44d-7bc2-4cad-934d-c9e946293b2f,40168,16790,,NacuPu00,,9493,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/br1ovzclyrebrec6q0mp",NAC559347,56042,32004e41-4355-9347-35af-af88fcaf7ee9,2023,2023,LA,WR,19,WC,A01,Puka,177
+88,Aaron Jones,RB,Ryan Heath,1988,PIT,LB,OLB,0,ACT,Aaron,Jones,1966-12-18,77.0,258,,00-0008676,,,,,,,,,,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/xwf2anwj5dyu62110wja",JON026576,,32004a4f-4e02-6576-a803-8ef5fe7b732f,,,,,,,,,
+72,Tony Pollard,RB,Matt Harmon,2019,DAL,RB,RB,20,ACT,Tony,Pollard,1997-04-30,72.0,209,Memphis,00-0035261,3916148,33b0227d-4c21-4e71-b4cd-be35f7db9123,31960,13590,27126,PollTo00,20912,5967,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/aagynal4it5gxaekintb",POL283188,47911,3200504f-4c28-3188-35b8-d0ae9db0f68a,2019,2019,DAL,RB,17,REG,A01,Tony,128
+1,Ja'Marr Chase,WR,Matt Harmon,2021,CIN,WR,WR,1,ACT,Ja'Marr,Chase,2000-03-01,72.0,200,Louisiana State,00-0036900,4362628,fa99e984-d63b-4ef4-a164-407f68a7eeaf,33393,15183,84270,ChasJa00,,7564,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/fxclfdx8fz5cbuep6ngd",CHA694469,53434,32004348-4169-4469-b021-d2c20a7d7cf5,2021,2021,CIN,WR,22,SB,A01,Ja'Marr,5
+142,Dylan Sampson,RB,Ray Garvin,2025,CLE,RB,RB,22,ACT,Dylan,Sampson,2004-09-14,68.0,201,Tennessee,00-0040162,5081397,6ea71d26-623a-4178-a93a-215678244902,,18467,163772,SampDy00,25889,12469,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/den1hzzomdxfcsgk88o5",SAM338622,58331,32005341-4d33-8622-de8a-1e3d03b08479,2025,2025,CLE,RB,18,REG,A01,Dylan,126
+109,Javonte Williams,RB,Justin Boone,2021,DEN,RB,RB,33,ACT,Javonte,Williams,2000-04-25,70.0,220,North Carolina,00-0036997,4361579,889dcdc5-3d88-45df-9677-5ad7ff87c011,33423,15306,77803,WillJa10,,7588,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/i00p0fbwvrap6lq1hojw",WIL351486,53464,32005749-4c35-1486-bb3e-8b9e35992111,2021,2021,DEN,RB,18,REG,A01,Javonte,35
+3,Justin Jefferson,WR,Ray Garvin,2020,MIN,WR,WR,18,ACT,Justin,Jefferson,1999-06-16,73.0,192,Louisiana State,00-0036322,4262921,4131d4ee-0318-4bb5-832a-4dec80668a4f,32692,14509,61398,JeffJu00,21685,6794,0,,JEF269287,52430,32004a45-4626-9287-c454-479b942cbd26,2020,2020,MIN,WR,17,REG,A01,Justin,22
+137,Justin Herbert,QB,Dave Kluge,2020,LAC,QB,QB,10,ACT,Justin,Herbert,1998-03-10,78.0,237,Oregon,00-0036355,4038941,f0a8f8e3-b9e9-46ed-85e4-eec6452a8a44,32676,14446,28237,HerbJu00,21681,6797,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/lrn52vly8xrfapbhw1ft",HER031169,52414,32004845-5203-1169-a699-ce41d700202a,2020,2020,LAC,QB,17,REG,A01,Justin,6
+133,Kyle Williams,WR,Justin Boone,2010,SF,WR,,10,ACT,Kyle,Williams,1988-07-19,70.0,186,,00-0027608,,,,,,,,,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/uc0hi9tbued5ff0osfmq",WIL415195,,32005749-4c41-5195-1ac3-e27f3ad6bfbd,2010,2010,SF,,17,REG,A01,Kyle,206
+44,Mike Evans,WR,Jennifer Eakins,1992,KC,DL,DT,0,RES,Michael,Evans,1967-06-02,75.0,269,,00-0004999,,,,,,,,,,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/ioyta7etyw8fj2rfufdn",EVA528309,,32004556-4152-8309-332c-68ff989a9daf,,,,,,,,,
+22,Tyreek Hill,WR,Ray Garvin,2016,KC,WR,WR,10,ACT,Tyreek,Hill,1994-03-01,70.0,185,West Alabama,00-0033040,3116406,01d8aee3-e1c4-4988-970a-8c0c2d08bd83,29399,11222,10799,HillTy00,18082,3321,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/daheq1ssy3lui6kxtudq",HIL628694,43454,32004849-4c62-8694-8490-45499711dee4,2016,2016,KC,SLOT_WR,19,DIV,A01,Tyreek,165
+32,Jaxon Smith-Njigba,WR,Dave Kluge,2023,SEA,WR,WR,11,ACT,Jaxon,Smith-Njigba,2002-02-14,72.0,198,Ohio State,00-0038543,,6215db71-1e13-4c62-8f14-2005d33dee47,40041,16654,,SmitJa06,,9488,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/r65p3l8nq7v4l9htqsud",SMI829636,55884,3200534d-4982-9636-a18c-5da6fbdaa80c,2023,2023,SEA,SLOT_WR,18,REG,A01,Jaxon,20
+18,A.J. Brown,WR,Chris Allen,2019,TEN,WR,WR,11,ACT,Arthur,Brown,1997-06-30,73.0,226,Mississippi,00-0035676,4047646,a9e580f2-1fbe-46fb-887c-c84089b507e4,31883,13432,48327,BrowAJ00,21042,5859,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/ucz9frks91kdccmgkkct",BRO413223,47834,32004252-4f41-3223-e4c5-1e30dffa87f8,2019,2019,TEN,WR,20,CON,A01,A.J.,51
+45,Terry McLaurin,WR,Rich Hribar,2019,WAS,WR,WR,17,INA,Terry,McLaurin,1995-09-15,72.0,210,Ohio State,00-0035659,3121422,7e8c4641-2beb-4213-ba22-69fe0307005f,31908,13536,48229,McLaTe00,20873,5927,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/bt4s1goiaogipi9fluzx",MCL278328,47859,32004d43-4c27-8328-8097-b130ba0e8060,2019,2019,WAS,,17,REG,A01,Terry,76
+16,Amon-Ra St. Brown,WR,Ryan Heath,2021,DET,WR,WR,14,ACT,Amon-Ra,St. Brown,1999-10-24,72.0,195,Southern California,00-0036963,4374302,26ef0447-29b8-4dd1-9831-dcbf8132bb74,33500,15332,84470,StxxAm00,,7547,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/wriyln01fppggo6jwvc0",STB415291,53541,32005354-4241-5291-a564-57e98d35161d,2021,2021,DET,SLOT_WR,18,REG,A01,Amon-Ra,112
+59,Kaleb Johnson,RB,Derek Brown,2025,PIT,RB,RB,20,INA,Kaleb,Johnson,2003-08-14,72.0,212,Iowa,00-0040142,4819231,9738de9a-7626-460f-a786-28433ef70a1f,,18515,156419,JohnKa03,26040,12504,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/sblojderaku4qta1lj2b",JOH398805,58288,32004a4f-4839-8805-a441-bdb3ea3187ea,2025,2025,PIT,,19,WC,A01,Kaleb,83
+17,Ladd McConkey,WR,Dave Kluge,2024,LAC,WR,WR,15,ACT,Andrew,McConkey,2001-11-11,72.0,185,Georgia,00-0039915,4612826,473bc7e5-c393-4f21-9e49-3ffc16711238,40908,17724,,McCoLa00,,11635,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wcx39ialovvxxnvs2bke",MCC512833,57155,32004d43-4351-2833-c30c-76941288e843,2024,2024,LAC,SLOT_WR,19,WC,A01,Ladd,34
+106,Bhayshul Tuten,RB,Ben Gretch,2025,JAX,RB,RB,33,ACT,Bhayshul,Tuten,2002-02-14,69.0,206,Virginia Tech; North Carolina A&T,00-0040719,4882093,26d4b13e-a555-4519-9356-cd16c65384e7,,18524,150568,TuteBh00,25898,12490,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/uf6bidyfjeemrlgsibiz",TUT066215,58309,32005455-5406-6215-da3b-cbf31441af43,2025,2025,JAX,RB,19,WC,A01,Bhayshul,104
+116,Evan Engram,TE,Jennifer Eakins,2017,NYG,TE,TE,88,ACT,Evan,Engram,1994-09-02,75.0,236,Mississippi,00-0033881,3051876,e21365af-8d66-416e-b0a5-8816d18fcfd9,30136,11805,11778,EngrEv00,18912,4066,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/nyhnfypbeatlkr7wveja",ENG726325,44835,3200454e-4772-6325-a4a0-9b4b442fe68a,2017,2017,NYG,,17,REG,A01,Evan,23
+9,De'Von Achane,RB,Ryan Heath,2023,MIA,RB,RB,28,ACT,Devon,Achane,2001-10-13,69.0,185,Texas A&amp;M,00-0039040,,a4ef921b-8767-4b4f-a651-7675c00f9af0,40118,16661,,AchaDe00,,9226,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/ywxugcuxwj4msieu6n25",ACH103822,55949,32004143-4810-3822-6a71-b10965e0a57a,2023,2023,MIA,RB,19,WC,A01,Devon,84
+94,J.K. Dobbins,RB,Ray Garvin,2020,BAL,RB,RB,27,ACT,Jkaylin,Dobbins,1998-12-17,70.0,214,Ohio State,00-0036158,4241985,a57b9914-4315-4295-98b4-9b348c52d6a1,32725,14418,57366,DobbJK00,21674,6806,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/tr3yxhybdwehibl6maqy",DOB207645,52463,3200444f-4220-7645-7ee7-94f57d3eed4f,2020,2020,BAL,RB,19,DIV,A01,J.K.,55
+49,George Pickens,WR,Matt Harmon,2022,PIT,WR,WR,14,ACT,George,Pickens,2001-03-04,75.0,200,Georgia,00-0037247,4426354,018e8f25-54e5-44f1-967a-7ff237f1c52f,,15853,,,,8137,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/weaecvrxrfflsqm8kvpt",PIC576156,54517,32005049-4357-6156-653f-e3c2b6d1b9bc,2022,2022,PIT,WR,18,REG,A01,George,52
+25,Lamar Jackson,QB,Matt Harmon,2018,BAL,QB,QB,8,ACT,Lamar,Jackson,1997-01-07,74.0,205,Louisville,00-0034796,3916387,e06a9c07-453a-4bb0-a7e9-2c3a64166dad,31002,12561,46416,JackLa00,19781,4881,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/rojvfogdbjpld2ldvdop",JAC323395,46101,32004a41-4332-3395-efb0-6c7b75de50af,2018,2018,BAL,QB,18,WC,A01,Lamar,32
+85,Emeka Egbuka,WR,Justin Boone,2025,TB,WR,WR,2,ACT,Emeka,Egbuka,2002-10-14,73.0,205,Ohio State,00-0040129,4567750,00cea287-1fa0-4584-803f-59f546ef8722,,18549,145055,EgbuEm01,26092,12514,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qolqqtwamffi0pi4np7h",EGB519113,58221,32004547-4251-9113-2459-a72f5ed777af,2025,2025,TB,SLOT_WR,18,REG,A01,Emeka,19
+25,Lamar Jackson,QB,Matt Harmon,2020,NYJ,DB,DB,38,ACT,Lamar,Jackson,1998-04-13,74.0,215,Nebraska,00-0036152,4034849,22e0f7ed-9b46-4a75-9780-d9b66c245744,33336,14583,50532,,22049,6994,0,,JAC321944,53054,32004a41-4332-1944-2c61-498a3d83a44e,2020,2020,,CB,17,REG,A01,Lamar,
+57,DeVonta Smith,WR,Ryan Heath,2021,PHI,WR,WR,6,ACT,DeVonta,Smith,1998-11-14,72.0,165,Alabama,00-0036912,4241478,3555d07e-57ae-43de-97d5-b1b5bf055f17,33398,15406,61100,SmitDe07,,7525,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/hol7dluumxi1cqxyagg3",SMI206016,53439,3200534d-4920-6016-573c-fcc767bafc4d,2021,2021,PHI,WR,19,WC,A01,DeVonta,10
+39,Marvin Harrison Jr.,WR,Ben Gretch,2024,ARI,WR,WR,18,ACT,Marvin,Harrison,2002-08-11,76.0,205,Ohio State,00-0039849,4432708,e8da21a8-796d-48a2-b644-57d08983ae01,40893,17674,,HarrMa09,,11628,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/o6hg5zeofmxvzjjpo2sf",HAR648677,57125,32004841-5264-8677-2fca-6edc0b245f94,2024,2024,ARI,WR,18,REG,A01,Marvin,4
+46,Chuba Hubbard,RB,Ray Garvin,2021,CAR,RB,RB,30,ACT,Chuba,Hubbard,1999-06-11,73.0,207,Oklahoma State,00-0036555,4241416,32205e74-b23f-420a-b312-465b29260745,33514,15242,57373,HubbCh01,,7594,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/nkitu0vqly1r1vreldfn",HUB179324,53555,32004855-4217-9324-a63d-319921de85bb,2021,2021,CAR,RB,18,REG,A01,Chuba,126
+128,Rachaad White,RB,Dave Kluge,2022,TB,RB,RB,29,ACT,Rachaad,White,1999-01-12,72.0,210,Arizona State,00-0037256,4697815,4d3f2f57-215c-4cb4-bf75-a7ecdcdded70,,15802,,,,8136,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/hls9krnjkudneprlkqxh",WHI393110,54556,32005748-4939-3110-903e-6b6c868dd3ab,2022,2022,TB,RB,19,WC,A01,Rachaad,91
+75,Jerry Jeudy,WR,Ray Garvin,2020,DEN,WR,WR,10,ACT,Jerry,Jeudy,1999-04-24,73.0,192,Alabama,00-0036407,4241463,eaaa4a61-c2a7-4926-8e9b-3ec71be2f991,32685,14458,61103,JeudJe00,21692,6783,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/fvdnrep98wisgfokxqar",JEU415291,52423,32004a45-5541-5291-9f8b-8595dc100c90,2020,2020,DEN,WR,17,REG,A01,Jerry,15
+138,Romeo Doubs,WR,Chris Allen,2022,GB,WR,WR,87,ACT,Romeo,Doubs,2000-04-13,74.0,200,Nevada,00-0037816,4361432,5f559fde-3a5f-4df6-99a2-cd1a4b103c68,,16027,,,,8121,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/wciz0bsjd4bedpiwggog",DOU043165,54597,3200444f-5504-3165-5639-a63528da6f6e,2022,2022,GB,WR,18,REG,A01,Romeo,132
+73,Jayden Reed,WR,Matt Harmon,2023,GB,WR,WR,11,ACT,Jayden,Reed,2000-04-28,71.0,190,Michigan State,00-0039146,,23a306bc-5f77-4574-a575-bd599f243185,40063,16977,,ReedJa03,,10222,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/hotj0rhtzqtfckgt7xue",REE263142,55915,32005245-4526-3142-e96f-a871c08a1138,2023,2023,GB,SLOT_WR,20,DIV,A01,Jayden,50
+112,Roschon Johnson,RB,Ryan Heath,2023,CHI,RB,RB,23,ACT,Roschon,Johnson,2001-01-31,72.0,222,Texas,00-0039021,,e3c414c0-be8c-4807-af9c-f91d89c83e60,40162,16772,,JohnRo07,,10235,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/oahmdtjp5ufvbk8dimws",JOH652931,55980,32004a4f-4865-2931-d4f5-6e3ddf27f82a,2023,2023,CHI,RB,18,REG,A01,Roschon,115
+21,Rashee Rice,WR,Rich Hribar,2023,KC,WR,WR,4,ACT,Rashee,Rice,2000-04-22,73.0,203,Southern Methodist,00-0039067,,cbd73c09-da07-48b0-a0d6-f248dfa631b6,40084,16963,,RiceRa01,,10229,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/zjgi60dvmj5ogvanp201",RIC152916,55920,32005249-4315-2916-ce74-9a69e469f940,2023,2023,KC,WR,22,SB,A01,Rashee,55
+84,Sam LaPorta,TE,Justin Boone,2023,DET,TE,TE,87,ACT,Sam,LaPorta,2001-01-12,75.0,249,Iowa,00-0039065,,3059f1e5-1871-4458-9e90-9b9917874c61,40064,17033,,LaPoSa01,,10859,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/svqsmqhfemrnxcheh0ev",LAP640235,55899,32004c41-5064-0235-3970-b5e5514839fc,2023,2023,DET,TE,21,CON,A01,Sam,34
+119,Najee Harris,RB,Ian Hartitz,2017,OAK,LB,LB,48,CUT,Najee,Harris,,73.0,220,Wagner,00-0033476,,,,,,,,,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/jybb2bazgubi71yjichl",HAR493096,45364,32004841-5249-3096-8261-bb87e0b10969,2017,2017,,,17,REG,,Najee,
+133,Kyle Williams,WR,Justin Boone,2008,SEA,T,,78,ACT,Kyle,Williams,1984-03-19,78.0,295,,00-0025780,,,,,,,,,1,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/cirnolvvmxv5usvm5lhs",WIL415233,,32005749-4c41-5233-9f5f-faa5a2b16ad8,2007,2007,,,17,REG,A01,Kyle,
+131,Justin Fields,QB,Derek Brown,2021,CHI,QB,QB,1,RES,Justin,Fields,1999-03-05,75.0,223,Ohio State,00-0036945,4362887,cf15be8f-9117-4531-a517-2b9c7cb3e9e1,33399,15416,82118,FielJu00,,7591,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/ohjocm3hzbdvvycmm3yf",FIE769504,53440,32004649-4576-9504-963d-c33127e80752,2021,2021,CHI,,18,REG,R59,Justin,11
+44,Mike Evans,WR,Jennifer Eakins,2014,TB,WR,,13,ACT,Mike,Evans,1993-08-21,77.0,231,Texas A&amp;M,00-0031408,16737,c48c21d9-0ae5-478c-ad34-30a660cfa9b8,27535,9253,8642,EvanMi00,16597,2216,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/w6eq27k2xs8vawwgkzbl",EVA534309,41233,32004556-4153-4309-b2ed-6b8233f6fea5,2014,2014,TB,,17,REG,A01,Mike,7
+5,Saquon Barkley,RB,Jennifer Eakins,2018,NYG,RB,RB,26,ACT,Saquon,Barkley,1997-02-09,72.0,223,Penn State,00-0034844,3929630,9811b753-347c-467a-b3cb-85937e71e2b9,30972,12507,45791,BarkSa00,19766,4866,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/yimxr0tykw7u3aogj60u",BAR192674,46208,32004241-5219-2674-af43-1519254e563d,2018,2018,NYG,RB,17,REG,A01,Saquon,2
+71,Chris Godwin,WR,Ian Hartitz,2017,TB,WR,WR,12,ACT,Rod,Godwin,1996-02-27,73.0,209,Penn State,00-0033921,3116165,baa61bb5-f8d0-4f90-bbe2-028576b8d33d,30197,11718,11839,GodwCh00,18880,4037,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/gv8mcd9ndaqdud3yeooe",GOD549393,44896,3200474f-4454-9393-6eec-24189dd66641,2017,2017,TB,WR,17,REG,A01,Chris,84
+124,Isaac Guerendo,RB,Rich Hribar,2024,SF,RB,RB,31,ACT,Isaac,Guerendo,2000-06-28,72.0,225,Louisville,00-0039363,4372561,eac64b21-6e9e-447a-bf18-8a00b5c12871,40998,17947,,GuerIs00,,11651,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vi0oa4oajc6ecgzr8l08",GUE547677,57250,32004755-4554-7677-8f5d-c4e05fdb16a1,2024,2024,SF,RB,18,REG,A01,Isaac,129
+107,Tre Harris,WR,Derek Brown,2025,LAC,WR,WR,9,ACT,Cleveland,Harris,2002-02-28,75.0,204,Mississippi; Louisiana Tech,00-0040727,4686612,a45328a1-7d0e-451a-8176-ea30f0e1c86f,,18478,122676,HarrTr03,25925,12509,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vfjekjvrfpbmskmuwoz9",HAR549958,58260,32004841-5254-9958-4dd2-0e73024370c7,2025,2025,LAC,WR,19,WC,A01,Tre,55
+120,Tucker Kraft,TE,Matt Harmon,2023,GB,TE,TE,85,ACT,Tucker,Kraft,2000-11-03,77.0,255,South Dakota State,00-0038996,,3a084c5f-6b9f-4703-a0c7-1566bc4b1129,40102,16649,,KrafTu00,,9484,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/bqr4k70qy6r6lppb2kue",KRA144054,55943,32004b52-4114-4054-e146-c099ad4f2842,2023,2023,GB,TE,20,DIV,A01,Tucker,78
+65,D'Andre Swift,RB,Dave Kluge,2020,DET,RB,RB,32,ACT,D'Andre,Swift,1999-01-14,69.0,211,Georgia,00-0036275,4259545,cc4b5f58-a11c-4450-a1df-617ad88336e4,32705,14394,57212,SwifDA00,21684,6790,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/amhsf13r1hnpo9lrn2uj",SWI228476,52443,32005357-4922-8476-53db-e64aaf6e01f5,2020,2020,DET,RB,17,REG,A01,D'Andre,35
+53,Courtland Sutton,WR,Jennifer Eakins,2018,DEN,WR,WR,14,ACT,Courtland,Sutton,1995-10-10,75.0,216,Southern Methodist,00-0034348,3128429,b55ae5ba-593f-4560-9cab-14e10698e01d,31010,12586,48164,SuttCo00,19800,5045,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/kifp4mpoadcd1qrn3iiv",SUT333526,46109,32005355-5433-3526-b2bf-88d6b83781c0,2018,2018,DEN,WR,17,REG,A01,Courtland,40
+24,Jonathan Taylor,RB,Matt Harmon,2020,IND,RB,RB,28,ACT,Jonathan,Taylor,1999-01-19,70.0,221,Wisconsin,00-0036223,4242335,925195a4-06ba-4e37-ae7d-a3d6a5419139,32711,14455,57488,TaylJo02,21682,6813,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/mx6ptr3jbhx0wxo3848u",TAY431618,52449,32005441-5943-1618-c081-5dd6b2d0b829,2020,2020,IND,RB,18,WC,A01,Jonathan,41
+77,Jakobi Meyers,WR,Jennifer Eakins,2019,NE,WR,WR,16,ACT,Jakobi,Meyers,1996-11-09,74.0,200,North Carolina State,00-0034960,3916433,73e194d1-a4b7-4de4-b1c2-3c24ef502918,32231,13517,47468,MeyeJa01,20876,5947,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/zftpoiqvpw1jmyt5l81l",MEY171606,48097,32004d45-5917-1606-4197-8f46779fb9b7,2019,2019,,,18,WC,A01,Jakobi,
+37,Kyren Williams,RB,Justin Boone,2022,LA,RB,RB,23,ACT,Kyren,Williams,2000-08-26,69.0,199,Notre Dame,00-0037840,4430737,19d44771-8f1d-4127-9b7d-230da137f15d,,15807,,,,8150,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/vpmtbmdlas24gkccaffk",WIL415359,54629,32005749-4c41-5359-809b-caeaa1db84d0,2022,2022,LA,,18,REG,A01,Kyren,164
+51,Joe Mixon,RB,Ray Garvin,2017,CIN,RB,RB,28,ACT,Joe,Mixon,1996-07-24,73.0,228,Oklahoma,00-0033897,3116385,7797f36e-87e8-4282-b6d2-bdb1774fc3b3,30161,11707,11803,MixoJo00,18858,4018,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/pkzlqusxfp1pioew4pb3",MIX564388,44860,32004d49-5856-4388-c611-05b6fcff1d1d,2017,2017,CIN,RB,17,REG,A01,Joe,48
+56,TreVeyon Henderson,RB,Dave Kluge,2025,NE,RB,RB,32,ACT,TreVeyon,Henderson,2002-10-22,70.0,212,Ohio State,00-0040734,4432710,0d9788e6-03ee-416d-8ba2-deb57037d209,,18517,145059,HendTr02,23245,12529,0,"https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cfcux3dnfmbmz3qzrnco",HEN144466,58243,32004845-4e14-4466-e552-da8f305c6946,2025,2025,NE,RB,22,SB,A01,TreVeyon,38
+96,Rashid Shaheed,WR,Matt Harmon,2022,NO,WR,WR,89,ACT,Rashid,Shaheed,1998-08-31,72.0,180,Weber State,00-0037545,,e1ecc660-cc9f-11ec-952e-a10f2c98fc4d,,16560,,,,8676,0,"https://static.www.nfl.com/image/private/f_auto,q_auto/league/rjgvutxutdp8l4jgfofo",SHA089447,55133,32005348-4108-9447-3491-eb73ad07ef30,2022,2022,,WR,18,REG,A01,Rashid,

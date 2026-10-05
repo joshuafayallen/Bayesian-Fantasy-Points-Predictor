@@ -1,10 +1,10 @@
-# src-dev — production pipeline for `het_gp_vegas` / `het_gp_qb_vegas`
+# src — production pipeline for `het_gp_vegas` / `het_gp_qb_vegas`
 
-A cleaned-up, tested subset of `src/` that does one job: forecast a week's
+A cleaned-up, tested rewrite of the earlier research code (the old `src/`, now in git history) that does one job: forecast a week's
 fantasy points with the two het_gp Vegas models and feed those draws to the
 start/sit decision engine. Everything that only served experiments (ar / hs /
 team / r2d2 / BART / stack, the ablation arms, the scratchpads, shrinkage,
-the team-pregame features) is left in `src/`.
+the team-pregame features) stayed in the research code.
 
 | model | positions | time axis | config |
 |---|---|---|---|
@@ -18,13 +18,13 @@ Why: `claude/team-context-ablation.md` in the project.
 ## Layout
 
 ```
-src-dev/
-  ff.py                 CLI entry point (python src-dev/ff.py --help)
+src/
+  ff.py                 CLI entry point (python src/ff.py --help)
   ffpred/
     config.py           paths, roster shape, the two model configs, sampler settings
     data_build.py       nflverse -> processed-data/ff-processed.parquet (port of data_cleaning.py)
     team_form.py        off/def team-strength state space -> processed-data/team_form.parquet
-                        (port of src/team_ability_ssm.py, the model that wrote the current file)
+                        (port of the old src/team_ability_ssm.py, the model that wrote the current file)
     data.py             load + validate processed data, Vegas features, as-of team-form join, windows
     upcoming.py         model rows for a week that hasn't been played (schedule + history)
     model.py            HetPrep / build_het_gp (model unchanged), fit, predict, diagnostics
@@ -42,15 +42,15 @@ Run from the project root (`uv run python ...` if you use the uv env).
 
 ```bash
 # 1. refresh data through last week (about 30 s, needs network)
-python src-dev/ff.py build-data
+python src/ff.py build-data
 # 2. refresh team form (the as-of join otherwise carries the last fitted week forward)
-python src-dev/ff.py build-team-form
+python src/ff.py build-team-form
 # 3. fit both models and forecast the coming week -> forecasts/2026_wk05/
-python src-dev/ff.py forecast 2026 5
+python src/ff.py forecast 2026 5
 # 4. choose a lineup
-python src-dev/ff.py decide forecasts/2026_wk05 --roster my_roster.txt --rule maximize_expected
-python src-dev/ff.py decide forecasts/2026_wk05 --roster my_roster.txt --rule head_to_head --opponent their_roster.csv
-python src-dev/ff.py decide forecasts/2026_wk05 --roster my_roster.txt --rule cvar_averse --lam 2
+python src/ff.py decide forecasts/2026_wk05 --roster my_roster.txt --rule maximize_expected
+python src/ff.py decide forecasts/2026_wk05 --roster my_roster.txt --rule head_to_head --opponent their_roster.csv
+python src/ff.py decide forecasts/2026_wk05 --roster my_roster.txt --rule cvar_averse --lam 2
 ```
 
 `decide` also reports the runner-up lineup and whether the choice is a
@@ -80,20 +80,20 @@ replays a past week on its actual rows instead.
 
 ```bash
 # walk-forward backtest (resumable; one JSON per fold under results/backtest/<run>/)
-python src-dev/ff.py backtest --seasons "2019 2023-2025" --weeks "6 9 12 15" \
+python src/ff.py backtest --seasons "2019 2023-2025" --weeks "6 9 12 15" \
     --models het_gp_vegas,baseline:het_gp_vegas --run-dir results/backtest/vegas
-python src-dev/ff.py summarize-backtest results/backtest/vegas
+python src/ff.py summarize-backtest results/backtest/vegas
 
 # tail calibration of a replayed week (forecast made with --source played)
-python src-dev/ff.py check-forecast forecasts/nuts_2025_wk09
+python src/ff.py check-forecast forecasts/nuts_2025_wk09
 
 # league simulation of the decision rules (one forecast per week, cached)
-python src-dev/ff.py league --seasons 2025 --weeks 1-9 --mock-draft mock-rosters/yahoo_expert_2025.csv \
+python src/ff.py league --seasons 2025 --weeks 1-9 --mock-draft mock-rosters/yahoo_expert_2025.csv \
     --out-dir results/league/yahoo2025
-python src-dev/ff.py summarize-league results/league/yahoo2025
+python src/ff.py summarize-league results/league/yahoo2025
 
 # tests (the real-data tests read processed-data/; slow ones need RUN_SLOW_TESTS=1)
-python -m pytest src-dev/tests -q
+python -m pytest src/tests -q
 ```
 
 Every backtest fold also records tail calibration by projection tier
@@ -110,19 +110,19 @@ forecast), 3-season window. The team-context ablation used 2 chains x 500 /
 500; pass `--chains 2 --draws 500 --tune 500` to reproduce it. `--method advi`
 is for smoke runs only.
 
-## What changed relative to `src/`
+## What changed relative to the research code (old `src/`)
 
 Behaviour changes (each one is deliberate; the old behaviour is reachable
 where it matters for reproducing old numbers):
 
-1. **Backtest eligibility.** `src/` scored a test row only if every one of
+1. **Backtest eligibility.** The old code scored a test row only if every one of
    `player_id, position, team, tenure, opp_team, season, week, player_season`
    appeared in training. het_gp uses none of the last six, and the rule
    silently drops every week-1 row and every player's first game of a season
-   (e.g. back from injury). `src-dev` scores every row the fitted model can
+   (e.g. back from injury). this package scores every row the fitted model can
    score (player seen in the window, tenure/age inside the fitted grid).
    `--eligibility legacy` reproduces the old rows.
-2. **Upcoming-week forecasts.** `src/` only ever predicted a week's *played*
+2. **Upcoming-week forecasts.** The old code only ever predicted a week's *played*
    rows, so who-played leaked in from the future and there was no way to
    forecast a real week. See `upcoming.py`. Replaying every 2023-2025 week
    through it (history + the week's games only): for weeks 2-18 it builds a
@@ -135,10 +135,10 @@ where it matters for reproducing old numbers):
    matched on display name. The Yahoo mock CSV carries `player_id`, but it
    was scraped by joining on name, so 12 of its 145 rows are same-name
    duplicates (three Josh Allens, three Kyle Williamses, two Aaron Joneses);
-   `src-dev` keeps one id per pick (position match, most recent season).
+   this package keeps one id per pick (position match, most recent season).
    Name matching is the fallback for CSVs without ids and refuses ambiguous
    names.
-4. **Deterministic fits.** Training rows are sorted before fitting. In `src/`
+4. **Deterministic fits.** Training rows are sorted before fitting. In the old code
    row order came from a polars join, and with the same data and seed a
    different row order gives a different MCMC run: about 1.5% of fold CRPS on
    a QB fold (3.541 vs 3.595 on 2024 wk 9). That's larger than the per-arm
@@ -157,27 +157,27 @@ where it matters for reproducing old numbers):
      order, which the fixes above changed).
    Net: 62,260 -> 62,251 rows; 9 rows dropped, 7 tenure fixes, a few dozen
    share / points-allowed values change.
-7. **Team form** is ported from `src/team_ability_ssm.py` (`TeamOffDef`),
+7. **Team form** is ported from old `src/team_ability_ssm.py` (`TeamOffDef`),
    which is what produced the `team_form.parquet` the models were validated
    on (it has `team_off_form` / `team_def_form` and week-0 rows). The
-   docstrings in `src/backtest_harness.py` and `src/league_validate.py` still
+   docstrings in old `src/backtest_harness.py` and old `src/league_validate.py` still
    point at `estimate_latent_ability.py`, which is stale.
 8. **Decision engine vs the FICO energy-planning script it's adapted from**
    (mapping in `decision_engine.py`'s docstring). Two fixes so it does what
    that script does: `pareto_frontier` now uses one scenario split for every
-   frontier point (src/ advanced a shared random generator, so each point
+   frontier point (the old code advanced a shared random generator, so each point
    was searched and scored on a different split); and when the search runs
    on a scenario subsample, reported stats now use all draws, like the
-   script's Monte Carlo `shortage_rate` (src/ reported on the subsample).
+   script's Monte Carlo `shortage_rate` (the old code reported on the subsample).
    `chance_constrained` is intentionally not the script's percentile
    approximation; it constrains the joint lineup total.
 9. Fold results are one JSON file each (resumable, safe to run folds in
    parallel); the old shared-CSV append wasn't.
 
 Parity checks done while building this:
-- `HetPrep` arrays and the compiled model log-density match `src/models.py`
+- `HetPrep` arrays and the compiled model log-density match old `src/models.py`
   exactly for both configs (5 random parameter points, difference 0.0).
-- With the same rows in the same order, `src-dev` reproduces the old
+- With the same rows in the same order, this package reproduces the old
   harness's fold to the last digit (QB 2024 wk 9: CRPS 3.5406160025).
 - `build-data --legacy` output equals the current `ff-processed.parquet`.
 - `build-team-form` reproduces the current `team_form.parquet`: same schema

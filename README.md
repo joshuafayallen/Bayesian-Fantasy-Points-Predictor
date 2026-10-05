@@ -34,16 +34,16 @@ whether I should start or sit a player. So I decided to build a fully
 Bayesian pipeline for forecasting and making roster decisions using a
 similar setup to [this PyMC Labs blog
 post](https://www.pymc-labs.com/blog-posts/probabilistic-forecasting-optimization-under-uncertainty).
-This approach relies on a well predictive intervals to make this
-approach possible. At every threshold the model’s intervals capture the
-real value extremely well.
+The approach only works if the predictive intervals are honest, so most
+of the effort below goes into checking that they are.
 
 ![](README_files/figure-commonmark/unnamed-chunk-1-1.png)
 
-Validated forecast uncertainty via walk-forward backtesting across four
-NFL seasons, achieving actual coverage within 2-4 points of nominal at
-every interval width tested (50/80/90%), while a naive point-estimate
-baseline flatlined near 37% coverage regardless of interval width.
+Across 12 walk-forward folds (weeks 4, 8, 12 and 16 of 2023-2025), the
+50/80/90% intervals hold the real score 58/85/92% of the time for
+RB/WR/TE and 49/79/89% for QB. That is close enough to trust a
+chance-constrained call, with one known problem covered in
+[Results](#results): for low projections the intervals are too wide.
 
 ## Setup
 
@@ -54,64 +54,72 @@ project, just run
 
     uv sync
 
+## Weekly use
+
+Everything runs through one command-line entry point, from the project
+root:
+
+``` bash
+# 1. refresh the data through last week (needs network)
+uv run python src/ff.py build-data
+# 2. refresh team form
+uv run python src/ff.py build-team-form
+# 3. fit both models and forecast the coming week -> forecasts/2026_wk05/
+uv run python src/ff.py forecast 2026 5
+# 4. choose a lineup
+uv run python src/ff.py decide forecasts/2026_wk05 --roster my_roster.txt --rule maximize_expected
+uv run python src/ff.py decide forecasts/2026_wk05 --roster my_roster.txt --rule cvar_averse --lam 2
+uv run python src/ff.py decide forecasts/2026_wk05 --roster my_roster.txt --rule head_to_head --opponent their_roster.csv
+```
+
+`decide` also reports the runner-up lineup and flags a **near tie** when
+the gap between them is within simulation noise, so a coin-flip
+start/sit call doesn’t look like a confident one. `src/README.md` has
+the details: every command, the backtest and league-simulation tools,
+and what changed from the research code.
+
 ## Testing
 
-`src/models.py` is the single source of truth for
-`ar_mod`/`hs_version`/`team_mod` – `tests/test_models.py` builds each
-architecture’s PyMC graph against tiny synthetic data (no real fit) to
-catch wiring regressions (wrong shape, wrong dim, a dropped
-`Deterministic`) in seconds:
+    uv run pytest src/tests -q
 
-    uv run pytest tests/test_models.py -v
+The fast tests build everything against a small synthetic league; tests
+that need the real parquet files skip themselves if the files are
+missing. Slow model fits are opt-in:
 
-`tests/test_backtest_integration.py` is the slower, real-data check: it
-actually fits each model via ADVI on one real fold and confirms
-`backtest_harness.py`’s CLI path still runs end to end. Opt in
-explicitly since each fit takes ~15-30s:
-
-    RUN_SLOW_TESTS=1 uv run pytest tests/test_backtest_integration.py -v
+    RUN_SLOW_TESTS=1 uv run pytest src/tests -q
 
 ## Project Structure
 
     fantasy-predictor/
-    ├── src/                          # data pipeline, model definitions, backtesting
-    │   ├── data_cleaning.py
-    │   ├── estimate_latent_ability.py
-    │   ├── models.py                 # shared PyMC model-building plumbing (single source of truth
-    │   │                             #   for ar_mod / hs_version / team_mod, used by both ff_ar.py
-    │   │                             #   and backtest_harness.py)
-    │   ├── ff_ar.py                  # full-history fit + diagnostics -- the ground truth for what
-    │   │                             #   each model architecture is
-    │   ├── bart_mod.py
-    │   ├── backtest_harness.py       # walk-forward CRPS/RMSE/coverage backtest
-    │   ├── summarize_backtest.py
-    │   ├── decision_engine.py
-    │   ├── forecast_roster.py
-    │   ├── calibrate_decisions.py
-    │   ├── league_validate.py
-    │   ├── mock_league.py
-    │   ├── adp_league.py
-    │   ├── show_decision.py          # prints/writes the decision engine's actual lineup picks
-    │   ├── sweep_summarize.py
-    │   └── run_*.sh                  # backtest / calibration / sweep drivers
-    ├── tests/
-    │   ├── test_models.py            # fast synthetic-data smoke tests for src/models.py
-    │   └── test_backtest_integration.py  # slow, real-data ADVI fit (opt-in via RUN_SLOW_TESTS=1)
+    ├── src/
+    │   ├── ff.py                     # command-line entry point
+    │   ├── ffpred/
+    │   │   ├── config.py             # paths, roster shape, model configs, sampler settings
+    │   │   ├── data_build.py         # nflverse -> processed-data/ff-processed.parquet
+    │   │   ├── team_form.py          # off/def team-strength state-space model -> team_form.parquet
+    │   │   ├── data.py               # loading, Vegas features, as-of team-form join, training windows
+    │   │   ├── upcoming.py           # model rows for a week that hasn't been played yet
+    │   │   ├── model.py              # the het_gp models: build, fit, predict, diagnostics
+    │   │   ├── forecast.py           # both models -> one week's joint predictive draws
+    │   │   ├── decision_engine.py    # lineup rules
+    │   │   ├── backtest.py           # walk-forward folds, one JSON per fold
+    │   │   ├── league.py             # league simulation of the decision rules
+    │   │   └── scoring.py            # CRPS / RMSE / coverage / tail calibration
+    │   ├── scratch.py                # model experiments
+    │   └── tests/
     ├── processed-data/
     │   ├── ff-processed.parquet
     │   └── team_form.parquet
     ├── results/
-    │   ├── backtest_walkforward.csv
-    │   ├── decision_example.csv
-    │   └── league_validation.csv
-    ├── README_files/
-    │   └── figure-commonmark/        # plot images rendered into README.md
+    │   └── backtest/calib/           # the walk-forward folds behind the plots above
     ├── README.qmd
     ├── README.md
     ├── pyproject.toml
-    ├── uv.lock
-    ├── skills-lock.json
-    └── .gitignore
+    └── uv.lock
+
+The research code that got the project here (the earlier model families,
+ablations and the original backtest harness) is in the git history; see
+[How the model evolved](#how-the-model-evolved).
 
 ## Data
 
@@ -122,13 +130,17 @@ train this model, I use data from 2013, when snaps are recorded, to
 
 - Fantasy Football Opportunity: A precomputed expected fantasy points
   dataset. I use:
+
   - Total Fantasy Points: outcome variable of interest
-  - Pass attempts, rush Attempts, receptions, and yardage to compute
+  - Pass attempts, rush attempts, receptions, and yardage to compute
     efficiency and usage statistics
   - Fantasy points allowed: A rolling average of fantasy points over
     expectation allowed by the opponent to a position group
+
 - Schedules: a dataset containing schedule information. I use:
-  - Spread line: The spread line for the game
+
+  - Spread line: The spread line for the game.
+  - Implied team total
   - Surface: collapsed to a binary variable where 1 indicates that the
     game is being played on grass
   - Roof: collapsed to a binary variable where 1 indicates whether the
@@ -141,95 +153,168 @@ train this model, I use data from 2013, when snaps are recorded, to
     player is on the home team.
   - Era: a binary indicator where 1 indicates the game occurs after the
     2018 rule change
+
 - Snap counts: a dataset containing snap counts for each player:
+
   - Offensive percent: percent of snaps taken on offense
   - Special teams percent: percent of special teams snaps taken.
+
 - Roster: a dataset containing information on every NFL roster. I use:
+
   - Rookie Year and Season to construct a player tenure variable.
+
+- Vegas lines (from the schedules): converted to the player’s side of
+  the game.
+
+  - Team spread: the spread from the player’s team’s point of view
+    (positive = favoured)
+  - Implied team total: half the game total plus half the team spread,
+    i.e. how many points Vegas expects the player’s team to score
+
+- Team form: a dynamic offense/defense team-strength model (a
+  state-space model on score margins, filtered with a Kalman filter)
+  gives each team’s form going into the week. Only weeks strictly before
+  the game are used.
+
 - Fantasy Football Player IDs I use:
+
   - Pro Football Reference ID: merge key used to join snaps to main
     dataset
 
 ## Model Architecture
 
-3 candidate models were eventually settled on using expected log
-pointwise predictive density (ELPD) against a lot of candidate models.
-Each of the three models shares some common components. Each of them
-have the same priors on continuous and binary covariates. Each model is
-a two-component mixture where a player’s recent games-missed and lagged
-offensive snap share determine the mixtures weight between a “limited
-role” and a “full-time role.” In the spirit of building a full fantasy
-prediction machine I didn’t want to drop any players conditional on
-offensive participation.
+There are two models with the same structure: one for RB/WR/TE and a
+separate one for QBs, whose scoring and aging look quite different.
+Points are standardized within the training window, and each player’s
+expected score for a week is built from:
 
-To get into the differences
+- **A position intercept.**
+- **A career aging curve.** A smooth bump over a player’s tenure, with a
+  shared width and a peak timing and height that vary by position: wide
+  receivers can break out as rookies while tight ends tend to peak
+  later. The QB model uses age instead of tenure and lets the curve rise
+  and fall at different rates.
+- **Player skill.** A career-long level for each player, partially
+  pooled within his position.
+- **Player form.** A Gaussian process over each player’s seasons
+  (Matérn-3/2 over tenure), so a player can be better or worse than his
+  career level in a given year without that leaking into other years.
+- **Game context.** Standardized usage and efficiency lags (target
+  share, rush share, snap shares, yards per target, depth of target, …),
+  the opponent’s recent points allowed to the position, weather, the
+  player’s side of the Vegas line and implied team total, binary game
+  conditions, and both teams’ form going into the week.
 
-**ar_mod**: This was effectively the baseline model. I use flat position
-intercepts, a Gaussian random-walk over the number of years a player has
-played in the NFL to measure latent skill and age curves, and a player
-season intercept to capture deviations in player form in that particular
-season. The AR structure draws heavily on Dave Zach’s [implementation in
-his spread
-model](https://github.com/dave-zack3/nfl_bayesian_rate_model/tree/main/src/models/spread).
-I place this AR process on opponent-defense strength over the defense’s
-week-to-week form.
+For RB/WR/TE the noise is heteroskedastic: each position has its own
+baseline spread, and a second Gaussian process lets the spread change
+over a career. The QB model uses a single noise scale.
 
-**hs_version**: This model has two main structural swaps. I build a
-varying effects model where each position gets its own position and its
-own slope based on standardized tenure. This *tries*, to capture the
-differing maturation curves of positional groups. In the past 5 years we
-consistently see Wide Receivers break out in their rookie year while
-Tight Ends tend to break out in their second or third year. The player
-season intercept is then replaced with a Hilbert-space Gaussian Process
-over a player’s season to capture week-to-week booms or ramp up to
-injury.
+Fits use NUTS (via nutpie) with 4 chains of 1,000 draws after 1,000
+tuning steps. The skill-position model takes about 3 minutes per fold
+and the QB model under a minute.
 
-**team_mod**: This model differs by omitting the player season
-intercepts. I also modeled the latent ability of the player’s team and
-the opponent via a state-space model on rest-adjusted score margins. The
-state-space approach draws inspiration from [Chris Fonnesbeck’s World
-Cup
+### How the model evolved
+
+The first three candidates were chosen by expected log pointwise
+predictive density (ELPD) from a larger set. Each was a two-component
+mixture in which recent games missed and lagged snap share set the
+weight between a “limited role” and a “full-time role”, so no player had
+to be dropped for low participation.
+
+**ar_mod** was the baseline: flat position intercepts, a Gaussian random
+walk over tenure for latent skill and aging, and a player-season
+intercept for in-season form. The AR structure draws heavily on Dave
+Zach’s [implementation in his spread
+model](https://github.com/dave-zack3/nfl_bayesian_rate_model/tree/main/src/models/spread),
+applied to opponent-defense strength.
+
+**hs_version** gave each position its own intercept and tenure slope,
+and replaced the player-season intercept with a Hilbert-space Gaussian
+process over a player’s season.
+
+**team_mod** dropped the player-season intercepts and added the latent
+strength of both teams through a state-space model on rest-adjusted
+score margins, inspired by [Chris Fonnesbeck’s World Cup
 model](https://www.pymc-labs.com/blog-posts/forecasting-the-2026-world-cup-group-stage).
+
+Stacking, R2D2 shrinkage priors and BART were also tried. The current
+models came out of those experiments: the aging curve and per-player
+season GP replaced the random walk and season intercepts. Two ablations
+settled the inputs: the player’s side of the Vegas line and the implied
+team total beat the raw home-perspective spread, and richer team-model
+context added nothing once they were in; advanced NGS/QBR stats added
+nothing out of sample once a data leak in how they were joined was
+removed.
 
 ## Results
 
-After running the ELPD comparisons, the results suggested that I should
-also try [model
-stacking](https://www.pymc.io/projects/examples/en/latest/diagnostics_and_criticism/model_averaging.html#stacking).
-I then ran a backtest on data from week 6 to week 15 for the 2013, 2019,
-2023, and 2024 seasons. Looking at the RMSE, we see a modest improvement
-over just using a player’s past mean.
+Each fold fits on the three seasons before the target week and forecasts
+that week’s players; the baseline is each player’s past average.
 
-|  | Mean RMSE | Mean MAE | Mean CRPS | Average Fit Time | RMSE % Improvement vs Baseline |
+|  | RMSE | Baseline | RMSE % improvement vs baseline | CRPS | Avg fit time (min) |
 |----|----|----|----|----|----|
-| State-Space Model estimated team strength | 6.389 | 4.747 | 3.353 | 3.122 | 5.36 |
-| Bayesian Model Stacking | 6.392 | 4.748 | 3.350 | 8.908 | 5.32 |
-| AR(1) Process on Opp form | 6.404 | 4.752 | 3.357 | 2.603 | 5.14 |
-| HSGP on player form | 6.415 | 4.764 | 3.364 | 3.526 | 4.97 |
+| QB Model | 7.57 | 8.11 | 6.70 | 4.28 | 0.39 |
+| Skill Model | 6.02 | 6.33 | 4.86 | 3.25 | 2.82 |
 
-However, part of the underlying motivation of this project was to build
-a decision engine where I can mitigate risky start-sit decisions. A
-chance-constrained call that rests on a player clearing a certain
-threshold x% of the time is meaningless if these intervals are not well
-calibrated. Each of these models clears this hurdle by about 2
-percentage points across each specification. For example, if we set the
-threshold for making decisions at 50% and used the state-space model,
-the bands that this model can produce hold the true value about 52% of
-the time.
+The models beat the past-average baseline by 4.86 for skill positions
+and 6.7 for QBs. That is a modest gain in point accuracy, but the
+decision engine needs more than an accurate mean: a chance-constrained
+call that rests on a player clearing a threshold x% of the time is
+meaningless if the intervals are not calibrated. Overall coverage, in
+the plot at the top, is close to nominal. Broken down by how many points
+a player is projected for, it is less even:
 
-![](README_files/figure-commonmark/unnamed-chunk-3-1.png)
+    # A tibble: 179 × 12
+       model    season  week pos   tier      n mean_expected mean_actual below_p10
+       <chr>     <int> <int> <chr> <fct> <int>         <dbl>       <dbl>     <dbl>
+     1 QB Model   2023     4 QB    6-12      9          9.47        4.36    0.222 
+     2 QB Model   2023     4 QB    12-18    22         15.3        13.7     0.136 
+     3 QB Model   2023     4 QB    18+       7         19.4        21.2     0.143 
+     4 QB Model   2023     8 QB    <6        3          4.97        1.85    0     
+     5 QB Model   2023     8 QB    6-12      6         10.1        10.7     0.167 
+     6 QB Model   2023     8 QB    12-18    21         15.3        15.6     0.0952
+     7 QB Model   2023     8 QB    18+       6         21.0        21.3     0.167 
+     8 QB Model   2023    12 QB    <6        5          3.72        0.82    0     
+     9 QB Model   2023    12 QB    6-12      8         10.0        11.0     0     
+    10 QB Model   2023    12 QB    12-18    16         15.5        14.4     0.125 
+    # ℹ 169 more rows
+    # ℹ 3 more variables: above_p90 <dbl>, pred_sd <dbl>, resid_sd <dbl>
 
-So how do we use this thing? Let’s take the Yahoo Fantasy Expert’s draft
-from 2025 as an imperfect example. We can’t observe the week-to-week
-add-drops or waiver-wire activity, so we can’t account for somebody
-adding Daniel Jones in the first week or two of the season or dropping
-Mike Evans when it was clear that his hamstring injury would prevent him
-from playing the rest of the year. I built a small simulator where we
-can build a round-robin schedule and have the lineups face each other.
-For demonstration purposes, I ran the decision engine on weeks 2-4 since
-we don’t have to worry about bye weeks. I will focus on team 5 in week 2
-because this is the first week where the decision engine had a different
-lineup than maximizing expected points.
+| Model | Projection tier | Players | Mean projected | Mean actual | % below p10 | % above p90 | Predicted sd | Actual sd of misses |
+|----|----|----|----|----|----|----|----|----|
+| Skill position | \<6 | 1161 | 3.9 | 3.8 | 0.0 | 5.7 | 6.0 | 3.9 |
+| Skill position | 6-12 | 1276 | 8.7 | 8.6 | 4.5 | 12.1 | 6.1 | 6.0 |
+| Skill position | 12-18 | 553 | 14.2 | 14.7 | 13.0 | 17.7 | 6.3 | 7.7 |
+| Skill position | 18+ | 61 | 19.7 | 21.0 | 18.0 | 14.8 | 6.4 | 6.6 |
+| QB Model | \<6 | 49 | 3.8 | 4.9 | 0.0 | 10.2 | 7.6 | 4.6 |
+| QB Model | 6-12 | 76 | 9.4 | 8.5 | 7.9 | 5.3 | 7.6 | 6.0 |
+| QB Model | 12-18 | 235 | 15.3 | 16.0 | 8.5 | 12.8 | 7.4 | 7.3 |
+| QB Model | 18+ | 79 | 20.1 | 19.4 | 17.7 | 15.2 | 7.4 | 8.2 |
+
+A calibrated model would put 10% of outcomes below the 10th percentile
+and 10% above the 90th in every tier, with the predicted and actual
+spread matching. Instead the model gives every player roughly the same
+spread (about 6 points for skill positions), while real spread grows
+with the projection: about 4 points for players projected under 6, about
+8 for players projected 12-18. So the floor for low-projection players
+is too pessimistic (no outcomes fell below the 10th percentile), and the
+range for high-projection players is too narrow. Letting the spread
+scale with the projection is the main thing in progress; see the to-do
+list.
+
+So how do we use this thing? (The example below was produced with an
+earlier version of the models; the decision rules work the same way.)
+Let’s take the Yahoo Fantasy Expert’s draft from 2025 as an imperfect
+example. We can’t observe the week-to-week add-drops or waiver-wire
+activity, so we can’t account for somebody adding Daniel Jones in the
+first week or two of the season or dropping Mike Evans when it was clear
+that his hamstring injury would prevent him from playing the rest of the
+year. I built a small simulator where we can build a round-robin
+schedule and have the lineups face each other. For demonstration
+purposes, I ran the decision engine on weeks 2-4 since we don’t have to
+worry about bye weeks. I will focus on team 5 in week 2 because this is
+the first week where the decision engine had a different lineup than
+maximizing expected points.
 
 Normally what I would do is just look at the players with the highest
 projected point totals and then maybe adjust who is starting versus who
@@ -309,18 +394,46 @@ are meaningfully worse than Pollard’s.
 | Joe Burrow   | 13.37         | 7.04         | TRUE |
 | Tony Pollard | 11.27         | 9.20         | TRUE |
 
+## Decision Engine
+
+The decision engine takes the joint predictive draws for a roster and
+picks a lineup under one of several rules:
+
+- `maximize_expected`: the highest expected total. What
+- `chance_constrained`: the best expected total among lineups that clear
+  a points floor in at least a given share of simulated weeks.
+- `cvar_averse`: expected points minus a penalty on the average
+  shortfall in the worst weeks (the CVaR example above).
+- `head_to_head`: the lineup most likely to beat a specific opponent’s
+  lineup.
+- `pareto_frontier`: the trade-off between expected points and downside
+  risk, so you can see what each step of safety costs.
+
+The structure (scenarios from the posterior predictive, then
+optimization over them) follows the [PyMC Labs
+post](https://www.pymc-labs.com/blog-posts/probabilistic-forecasting-optimization-under-uncertainty)
+and FICO’s [stochastic energy-planning
+example](https://github.com/fico-xpress/xpress-community/blob/main/StochasticEnergyPlanning/stochastic_energy_planning.py)
+for Xpress. Small rosters are solved by enumerating every lineup;
+mixed-integer versions are available when the Xpress solver is
+installed.
+
 ## To Do
 
-- \[\] Build a more robust decision engine to add in Pareto Analysis
+- [x] Build a more robust decision engine to add in Pareto Analysis
   similar to [the PyMC blog
   post](https://www.pymc-labs.com/blog-posts/probabilistic-forecasting-optimization-under-uncertainty)
 - [x] Improve the organization of the repo so that we can use various
-  scripts as modules and rewire the underlying scripts. (`src/models.py`
-  is now the single source of truth for the PyMC model-building code;
-  `ff_ar.py` and `backtest_harness.py` both import it instead of each
-  keeping their own hand-ported copy.)
-- \[\] Try out [Alchemize](https://github.com/pymc-labs/alchemize) to
-  rebuild the underlying models in Rust to speed up sampling,
-  - Currently everything samples in 30-40 minutes
-- \[\] Build a friendlier interface to use.
-- \[\] Add a scheduler so I don’t have to run this manually everyweek
+  scripts as modules and rewire the underlying scripts.
+- [x] Report near ties so coin-flip start/sit calls are flagged as such.
+- [ ] Let the predictive spread grow with the projection (fixes the tier
+  calibration above). A first version improved CRPS by about 2% but
+  pulled down projections for top players, because tying the spread to
+  the mean biases the mean; the next version ties it to the player’s
+  trailing average instead.
+- [ ] Compare lineups chosen with and without that change by realized
+  points, not just forecast scores.
+- [ ] Try out [Alchemize](https://github.com/pymc-labs/alchemize) to
+  rebuild the underlying models in Rust to speed up sampling.
+- [ ] Build a friendlier interface to use.
+- [ ] Add a scheduler so I don’t have to run this manually every week.

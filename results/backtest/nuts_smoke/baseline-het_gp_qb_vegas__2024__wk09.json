@@ -1,0 +1,45 @@
+{
+ "model": "baseline:het_gp_qb_vegas",
+ "season": 2024,
+ "week": 9.0,
+ "method": "nuts",
+ "sampler": "nutpie",
+ "eligibility": "model",
+ "window_seasons": 3,
+ "n_test": 34,
+ "n_dropped": 0,
+ "fit_time": 0.0,
+ "n_train": 1605,
+ "divergences": 0,
+ "max_rhat": null,
+ "n": 34,
+ "rmse": 7.037058284110637,
+ "mae": 5.870313915285741,
+ "crps": 5.870313915285741,
+ "spearman": 0.46053938555982976,
+ "cov50": 0.0,
+ "cov80": 0.0,
+ "cov90": 0.0,
+ "rmse_base": 7.037058284110637,
+ "by_position": [
+  {
+   "pos": "QB",
+   "n": 34,
+   "rmse": 7.037058284110637,
+   "mae": 5.870313915285741,
+   "crps": 5.870313915285741,
+   "spearman": 0.46053938555982976,
+   "cov50": 0.0,
+   "cov80": 0.0,
+   "cov90": 0.0,
+   "rmse_base": 7.037058284110637
+  }
+ ],
+ "coefs": null,
+ "settings": {
+  "draws": 500,
+  "tune": 500,
+  "chains": 2,
+  "seed": 0
+ }
+}

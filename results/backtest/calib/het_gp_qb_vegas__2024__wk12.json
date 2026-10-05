@@ -1,0 +1,215 @@
+{
+ "model": "het_gp_qb_vegas",
+ "season": 2024,
+ "week": 12.0,
+ "method": "nuts",
+ "sampler": "nutpie",
+ "eligibility": "model",
+ "window_seasons": 3,
+ "n_test": 32,
+ "n_dropped": 0,
+ "fit_time": 25.383307933807373,
+ "n_train": 1705,
+ "divergences": 0,
+ "max_rhat": 1.01,
+ "min_ess_bulk": 374.0,
+ "n": 32,
+ "rmse": 6.040932639112011,
+ "mae": 4.96508317654312,
+ "crps": 3.4469931883882454,
+ "spearman": 0.6173586314994641,
+ "cov50": 0.625,
+ "cov80": 0.84375,
+ "cov90": 0.96875,
+ "below_p10": 0.0,
+ "above_p90": 0.15625,
+ "pred_sd": 7.303812757689758,
+ "resid_sd": 5.908490505795121,
+ "pit_hist": [
+  0,
+  3,
+  4,
+  6,
+  2,
+  3,
+  4,
+  3,
+  2,
+  5
+ ],
+ "rmse_base": 7.024420648878681,
+ "by_position": [
+  {
+   "pos": "QB",
+   "n": 32,
+   "rmse": 6.040932639112008,
+   "mae": 4.96508317654311,
+   "crps": 3.4469931883882454,
+   "spearman": 0.6173586314994641,
+   "cov50": 0.625,
+   "cov80": 0.84375,
+   "cov90": 0.96875,
+   "below_p10": 0.0,
+   "above_p90": 0.15625,
+   "pred_sd": 7.303812757689759,
+   "resid_sd": 5.908490505795117,
+   "pit_hist": [
+    0,
+    3,
+    4,
+    6,
+    2,
+    3,
+    4,
+    3,
+    2,
+    5
+   ],
+   "rmse_base": 7.024420648878681
+  }
+ ],
+ "by_tier": [
+  {
+   "pos": "QB",
+   "tier": "<6",
+   "n": 6,
+   "mean_expected": 3.4879108491627595,
+   "mean_actual": 3.5666666666666664,
+   "below_p10": 0.0,
+   "above_p90": 0.0,
+   "pred_sd": 7.476251079635262,
+   "resid_sd": 5.426760864938513
+  },
+  {
+   "pos": "QB",
+   "tier": "6-12",
+   "n": 4,
+   "mean_expected": 9.525712255227688,
+   "mean_actual": 9.99,
+   "below_p10": 0.0,
+   "above_p90": 0.25,
+   "pred_sd": 7.294252105517231,
+   "resid_sd": 6.9054741247084355
+  },
+  {
+   "pos": "QB",
+   "tier": "12-18",
+   "n": 18,
+   "mean_expected": 15.528979449995107,
+   "mean_actual": 17.33888888888889,
+   "below_p10": 0.0,
+   "above_p90": 0.16666666666666666,
+   "pred_sd": 7.253744581558389,
+   "resid_sd": 5.568631844083996
+  },
+  {
+   "pos": "QB",
+   "tier": "18+",
+   "n": 4,
+   "mean_expected": 20.527876925622913,
+   "mean_actual": 21.865000000000002,
+   "below_p10": 0.0,
+   "above_p90": 0.25,
+   "pred_sd": 7.280022719535196,
+   "resid_sd": 6.617065178728604
+  }
+ ],
+ "coefs": [
+  {
+   "var": "roll_avg_points_allowed_z",
+   "coef_mean": -0.002690218426913141,
+   "coef_sd": 0.020171420515539624
+  },
+  {
+   "var": "lag_yards_per_rush_attempt_z",
+   "coef_mean": 0.0033303826828067623,
+   "coef_sd": 0.022830974249415836
+  },
+  {
+   "var": "lag_yards_per_pass_attempt_z",
+   "coef_mean": 0.022779425497964415,
+   "coef_sd": 0.03779062559450543
+  },
+  {
+   "var": "lag_avg_depth_of_target_z",
+   "coef_mean": -0.001226627492254305,
+   "coef_sd": 0.02116787453266693
+  },
+  {
+   "var": "lag_rush_share_z",
+   "coef_mean": -0.02599653016330004,
+   "coef_sd": 0.027469316958801043
+  },
+  {
+   "var": "temp_z",
+   "coef_mean": -0.03829106857312172,
+   "coef_sd": 0.023693162475027046
+  },
+  {
+   "var": "wind_z",
+   "coef_mean": -0.03544920218273144,
+   "coef_sd": 0.02889834136133371
+  },
+  {
+   "var": "games_missed_ytd_z",
+   "coef_mean": -0.12306985413805166,
+   "coef_sd": 0.030900709352468955
+  },
+  {
+   "var": "lag_offense_pct_z",
+   "coef_mean": 0.2328018961633136,
+   "coef_sd": 0.04100802867303521
+  },
+  {
+   "var": "team_spread_z",
+   "coef_mean": -0.08215978603040938,
+   "coef_sd": 0.05123546318160602
+  },
+  {
+   "var": "vegas_team_total_z",
+   "coef_mean": 0.10067734888772918,
+   "coef_sd": 0.046719577308816526
+  },
+  {
+   "var": "is_grass",
+   "coef_mean": 0.0404313118117505,
+   "coef_sd": 0.04786011164358041
+  },
+  {
+   "var": "is_indoors",
+   "coef_mean": 0.07845807734919592,
+   "coef_sd": 0.06897571753841453
+  },
+  {
+   "var": "is_home",
+   "coef_mean": 0.14461786756143352,
+   "coef_sd": 0.043792158700771786
+  },
+  {
+   "var": "div_game",
+   "coef_mean": 0.006868928843592662,
+   "coef_sd": 0.04315099562948024
+  },
+  {
+   "var": "era",
+   "coef_mean": -1.566850839371353e-05,
+   "coef_sd": 0.5126954477646664
+  },
+  {
+   "var": "team_form_prior",
+   "coef_mean": -0.05235569867256284,
+   "coef_sd": 0.03874856591645437
+  },
+  {
+   "var": "opp_form_prior",
+   "coef_mean": -0.02771843477667944,
+   "coef_sd": 0.030548503209913185
+  }
+ ],
+ "settings": {
+  "draws": 1000,
+  "tune": 1000,
+  "chains": 4,
+  "seed": 0
+ }
+}

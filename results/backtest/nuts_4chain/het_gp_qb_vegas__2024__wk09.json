@@ -1,0 +1,137 @@
+{
+ "model": "het_gp_qb_vegas",
+ "season": 2024,
+ "week": 9.0,
+ "method": "nuts",
+ "sampler": "nutpie",
+ "eligibility": "model",
+ "window_seasons": 3,
+ "n_test": 34,
+ "n_dropped": 0,
+ "fit_time": 16.60581088066101,
+ "n_train": 1605,
+ "divergences": 0,
+ "max_rhat": 1.02,
+ "min_ess_bulk": 256.0,
+ "n": 34,
+ "rmse": 6.551659649537829,
+ "mae": 5.165213223153461,
+ "crps": 3.680867795026888,
+ "spearman": 0.5575248281130634,
+ "cov50": 0.5294117647058824,
+ "cov80": 0.8823529411764706,
+ "cov90": 0.9117647058823529,
+ "rmse_base": 7.037058284110637,
+ "by_position": [
+  {
+   "pos": "QB",
+   "n": 34,
+   "rmse": 6.551659649537826,
+   "mae": 5.165213223153457,
+   "crps": 3.6808677950268907,
+   "spearman": 0.5575248281130634,
+   "cov50": 0.5294117647058824,
+   "cov80": 0.8823529411764706,
+   "cov90": 0.9117647058823529,
+   "rmse_base": 7.037058284110637
+  }
+ ],
+ "coefs": [
+  {
+   "var": "roll_avg_points_allowed_z",
+   "coef_mean": 0.0045967705006540694,
+   "coef_sd": 0.02059668863953437
+  },
+  {
+   "var": "lag_yards_per_rush_attempt_z",
+   "coef_mean": 0.0015458269463839887,
+   "coef_sd": 0.022354467108627332
+  },
+  {
+   "var": "lag_yards_per_pass_attempt_z",
+   "coef_mean": 0.011810718779162479,
+   "coef_sd": 0.039349793427491744
+  },
+  {
+   "var": "lag_avg_depth_of_target_z",
+   "coef_mean": 0.00870573817787331,
+   "coef_sd": 0.021222080737006294
+  },
+  {
+   "var": "lag_rush_share_z",
+   "coef_mean": -0.026436017464593085,
+   "coef_sd": 0.02815450603340795
+  },
+  {
+   "var": "temp_z",
+   "coef_mean": -0.04252238343633224,
+   "coef_sd": 0.02459969854144013
+  },
+  {
+   "var": "wind_z",
+   "coef_mean": -0.03929273669919327,
+   "coef_sd": 0.029670527230476185
+  },
+  {
+   "var": "games_missed_ytd_z",
+   "coef_mean": -0.1263553400692883,
+   "coef_sd": 0.03303929786645402
+  },
+  {
+   "var": "lag_offense_pct_z",
+   "coef_mean": 0.23635930645776623,
+   "coef_sd": 0.042084989977076596
+  },
+  {
+   "var": "team_spread_z",
+   "coef_mean": -0.07598158827289186,
+   "coef_sd": 0.05141218631625718
+  },
+  {
+   "var": "vegas_team_total_z",
+   "coef_mean": 0.09815425068548599,
+   "coef_sd": 0.04739103932123877
+  },
+  {
+   "var": "is_grass",
+   "coef_mean": 0.055053911836543186,
+   "coef_sd": 0.04820331743504823
+  },
+  {
+   "var": "is_indoors",
+   "coef_mean": 0.09847965079201208,
+   "coef_sd": 0.07168259639695214
+  },
+  {
+   "var": "is_home",
+   "coef_mean": 0.14247239828904254,
+   "coef_sd": 0.04469218927869591
+  },
+  {
+   "var": "div_game",
+   "coef_mean": 0.01469159820859134,
+   "coef_sd": 0.04520143679808467
+  },
+  {
+   "var": "era",
+   "coef_mean": -0.010234632894134508,
+   "coef_sd": 0.4886174255776698
+  },
+  {
+   "var": "team_form_prior",
+   "coef_mean": -0.041129169427882306,
+   "coef_sd": 0.039810427370469526
+  },
+  {
+   "var": "opp_form_prior",
+   "coef_mean": -0.0109804248275101,
+   "coef_sd": 0.03119263354418364
+  }
+ ],
+ "settings": {
+  "draws": 500,
+  "tune": 500,
+  "chains": 4,
+  "seed": 0
+ }
+}

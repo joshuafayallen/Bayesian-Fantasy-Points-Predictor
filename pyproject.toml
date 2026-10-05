@@ -30,6 +30,7 @@ dependencies = [
     "statsmodels>=0.14.6",
     "tidydraws>=0.4.3",
     "tqdm>=4.67.3",
+    "xpresslibs>=9.9.1",
 ]
 
 [project.optional-dependencies]

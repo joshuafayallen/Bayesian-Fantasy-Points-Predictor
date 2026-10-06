@@ -95,6 +95,7 @@ uv run python src/ff.py build-team-form
 # 3. fit both models and forecast the coming week -> forecasts/2026_wk05/
 uv run python src/ff.py forecast 2026 5
 # 4. choose a lineup
+# your roster can also we a csv file
 uv run python src/ff.py decide forecasts/2026_wk05 --roster my_roster.txt --rule maximize_expected
 uv run python src/ff.py decide forecasts/2026_wk05 --roster my_roster.txt --rule cvar_averse --lam 2
 uv run python src/ff.py decide forecasts/2026_wk05 --roster my_roster.txt --rule head_to_head --opponent their_roster.csv
@@ -188,7 +189,7 @@ There are two models with the same structure: one for RB/WR/TE and a separate on
 - **Player form.** A Gaussian process over each player's seasons (Matérn-3/2 over tenure), so a player can be better or worse than his career level in a given year without that leaking into other years.
 - **Game context.** Standardized usage and efficiency lags (target share, rush share, snap shares, yards per target, depth of target, ...), the opponent's recent points allowed to the position, weather, the player's side of the Vegas line and implied team total, binary game conditions, and both teams' form going into the week.
 
-For RB/WR/TE the noise is heteroskedastic: each position has its own baseline spread, and a second Gaussian process lets the spread change over a career. The QB model uses a single noise scale.
+For RB/WR/TE the noise is heteroskedastic: each position has its own baseline spread, and a second Gaussian process lets the spread change over a career. The QB model uses a single noise scale. The inspiration for this idea came from [the Heteroskedastic Gaussian Process example from PyMC](https://www.pymc.io/projects/examples/en/latest/gaussian_processes/GP-Heteroskedastic.html). 
 
 Fits use NUTS (via nutpie) with 4 chains of 1,000 draws after 1,000 tuning steps. The skill-position model takes about 3 minutes per fold and the QB model under a minute.
 
@@ -202,8 +203,7 @@ The first three candidates were chosen by expected log pointwise predictive dens
 
 **team_mod** dropped the player-season intercepts and added the latent strength of both teams through a state-space model on rest-adjusted score margins, inspired by [Chris Fonnesbeck's World Cup model](https://www.pymc-labs.com/blog-posts/forecasting-the-2026-world-cup-group-stage).
 
-Stacking, R2D2 shrinkage priors and BART were also tried. The current models came out of those experiments: the aging curve and per-player season GP replaced the random walk and season intercepts. Two ablations settled the inputs: the player's side of the Vegas line and the implied team total beat the raw home-perspective spread, and richer team-model context added nothing once they were in; advanced NGS/QBR stats added nothing out of sample once a data leak in how they were joined was removed.
-
+Stacking, R2D2 shrinkage priors and BART were also tried. The current models came out of those experiments: the aging curve and per-player season GP replaced the random walk and season intercepts. After rethinking what the latent qualities of the model are I decided experimented and found that the Heteroskedastic GP tapped those latent quantities better. I found, through ablation testing, that the GP model with implied team totals and player side Vegas lines outperformed prior iterations of the model and was significantly faster. 
 ## Results
 
 Each fold fits on the three seasons before the target week and forecasts that week's players; the baseline is each player's past average.
@@ -241,7 +241,7 @@ min_rmse =  min(summary_stats$`RMSE % improvement vs baseline`)
 max_rmse = max(summary_stats$`RMSE % improvement vs baseline`)
 ```
 
-The models beat the past-average baseline by `r min_rmse` for skill positions  and `r max_rmse` for QBs. That is a modest gain in point accuracy, but the decision engine needs more than an accurate mean: a chance-constrained call that rests on a player clearing a threshold x% of the time is meaningless if the intervals are not calibrated. Overall coverage, in the plot at the top, is close to nominal. Broken down by how many points a player is projected for, it is less even:
+The models beat the past-average baseline by `r min_rmse` for skill positions  and `r max_rmse` for QBs. This makes some sense if we know that the player is LaDanian Tomlinson in 2006 than we have a good idea of how well that player is going to play next week. However, the decision engine needs more than an accurate mean: a chance-constrained call that rests on a player clearing a threshold x% of the time is meaningless if the intervals are not calibrated. Overall coverage, in the plot at the top, is close to nominal. Broken down by how many points a player is projected for, it is less even:
 
 ```{r}
 #| echo: false
@@ -296,7 +296,7 @@ tt(tier_summary) |>
 
 A calibrated model would put 10% of outcomes below the 10th percentile and 10% above the 90th in every tier, with the predicted and actual spread matching. Instead the model gives every player roughly the same spread (about 6 points for skill positions), while real spread grows with the projection: about 4 points for players projected under 6, about 8 for players projected 12-18. So the floor for low-projection players is too pessimistic (no outcomes fell below the 10th percentile), and the range for high-projection players is too narrow. Letting the spread scale with the projection is the main thing in progress; see the to-do list.
 
-So how do we use this thing? (The example below was produced with an earlier version of the models; the decision rules work the same way.) Let's take the Yahoo Fantasy Expert's draft from 2025 as an imperfect example. We can't observe the week-to-week add-drops or waiver-wire activity, so we can't account for somebody adding Daniel Jones in the first week or two of the season or dropping Mike Evans when it was clear that his hamstring injury would prevent him from playing the rest of the year. I built a small simulator where we can build a round-robin schedule and have the lineups face each other. For demonstration purposes, I ran the decision engine on weeks 2-4 since we don't have to worry about bye weeks. I will focus on team 5 in week 2 because this is the first week where the decision engine had a different lineup than maximizing expected points.
+So how do we use this thing? Let's take the Yahoo Fantasy Expert's draft from 2025 as an imperfect example. We can't observe the week-to-week add-drops or waiver-wire activity, so we can't account for somebody adding Daniel Jones in the first week or two of the season or dropping Mike Evans when it was clear that his hamstring injury would prevent him from playing the rest of the year. I built a small simulator where we can build a round-robin schedule and have the lineups face each other. For demonstration purposes, I ran the decision engine on weeks 2-4 since we don't have to worry about bye weeks. I will focus on team 5 in week 2 because this is the first week where the decision engine had a different lineup than maximizing expected points.
 
 Normally what I would do is just look at the players with the highest projected point totals and then maybe adjust who is starting versus who is sitting based on heuristics about matchup and potential game conditions. So my lineup would look, mostly like the table below 
 
@@ -317,7 +317,7 @@ example_decisions |>
 ```
 
 
-However, this is just one rule. The decision engine has a few more. Conditional Value at Risk (CVaR) trades some expected points for a more stable floor. First we pick a target, a fixed point threshold, which in this example is our opponent's projected total for the week, and an alpha, the fraction of worst-case scenarios we care about (20% here). To see what this is actually doing, I worked through a small example: ten representative weekly outcomes for a steady-floor player and a boom/bust player. For every scenario, we compute the shortfall below target, then average the shortfalls in just the worst 20% of scenarios. That average is the CVaR. The decision rule then maximizes expected points minus a penalty term, lambda, times that CVaR. Lambda controls how much of the tradeoff to make. At lambda=0, this is identical to just starting the highest-expected-points player. As lambda grows, the rule increasingly favors the player whose bad weeks are smaller in magnitude, even at the cost of a lower mean. In a practical sense, all we are doing is setting how much average performance am I willing to give up to make sure the floor doesn't collapse. 
+However, this is just one rule. The decision engine has a few more. Conditional Value at Risk (CVaR) trades some expected points for a more stable floor. First we pick a target, a fixed point threshold, which in this example is our opponent's projected total for the week, and an alpha, the fraction of worst-case scenarios we care about (20% here). To see what this is actually doing, I worked through a small example: ten representative weekly outcomes for a steady-floor player and a boom/bust player. For every scenario, we compute the shortfall below target, then average the shortfalls in just the worst 20% of scenarios. That average is the CVaR. The decision rule then maximizes expected points minus a penalty term, lambda, times that CVaR. Lambda controls how much of the tradeoff to make. At lambda=0, this is identical to just starting the highest-expected-points player. As lambda grows, the rule increasingly favors the player whose bad weeks are smaller in magnitude, even at the cost of a lower mean. In a practical sense, all we are doing is setting how much average performance you are willing to give up to make sure the floor doesn't collapse. 
 
 
 ```{r}

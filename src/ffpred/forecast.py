@@ -1,12 +1,19 @@
-"""Week-ahead forecasts from both production models, in the shape the
-decision engine consumes: a frame (one row per player) and a draws matrix
-(n_draws x n_players) whose columns follow the frame's rows.
+"""Week-ahead forecasts in the shape the decision engine consumes: a frame
+(one row per player) and a draws matrix (n_draws x n_players) whose columns
+follow the frame's rows.
 
-The skill model (het_gp_vegas) and the QB model (het_gp_qb_vegas) are fit
-separately, so the joint draws pair a QB draw with a skill draw arbitrarily:
-there is no modelled correlation between a QB and his receivers. Within a
-model, columns share posterior draws (parameter uncertainty is correlated),
-which is what the paired-draw decision rules rely on.
+Two forecast models (``model=``):
+
+'qb_linked' (default)   het_gp_qb_vegas for QBs + the hurdle-gamma skill model
+                        linked to the starting QB (qblink.py). Row i of the
+                        draws gives a QB and his receivers the same QB surprise,
+                        so QB-receiver stacks are correlated.
+'independent'           het_gp_vegas + het_gp_qb_vegas fit separately: a QB
+                        draw is paired with a skill draw arbitrarily, with no
+                        QB-receiver correlation.
+
+Within a model, columns share posterior draws (parameter uncertainty is
+correlated), which is what the paired-draw decision rules rely on.
 """
 
 from __future__ import annotations
@@ -21,8 +28,10 @@ import polars as pl
 
 from . import data as D
 # pyrefly: ignore [missing-import]
-from .config import MIN_TRAIN_ROWS, MODELS, TARGET_COL, WINDOW_SEASONS, SamplerSettings
+from .config import (FORECAST_MODELS, HET_GP_QB_VEGAS, HURDLE_SKILL, MIN_TRAIN_ROWS, MODELS, QB_LINKED,
+                     TARGET_COL, WINDOW_SEASONS, SamplerSettings)
 from .model import FittedModel, fit
+from .qblink import NO_QB, fit_qb_linked
 
 log = logging.getLogger(__name__)
 
@@ -87,8 +96,8 @@ def prepare_history(processed: pl.DataFrame, team_form: pl.DataFrame) -> pl.Data
 def forecast_week(history: pl.DataFrame, team_form: pl.DataFrame, season: int, week: float,
                   frame: pl.DataFrame | None = None, settings: SamplerSettings = SamplerSettings(),
                   window_seasons: int = WINDOW_SEASONS, models=tuple(MODELS),
-                  min_train_rows: int = MIN_TRAIN_ROWS) -> WeekForecast:
-    """Fit each model on the window before (season, week) and forecast ``frame``.
+                  min_train_rows: int = MIN_TRAIN_ROWS, model: str = QB_LINKED) -> WeekForecast:
+    """Fit on the window before (season, week) and forecast ``frame``.
 
     history:   processed player-weeks (``data.load_processed``). Only rows
                strictly before the week are used for fitting.
@@ -96,8 +105,43 @@ def forecast_week(history: pl.DataFrame, team_form: pl.DataFrame, season: int, w
     frame:     rows to forecast -- ``upcoming.build_upcoming_frame`` for a
                real week; default: the week's played rows from ``history``
                (a replay, for validation).
+    model:     'qb_linked' (production) or 'independent'. ``models`` picks the
+               het_gp configs for 'independent' and is ignored otherwise.
     """
+    if model not in FORECAST_MODELS:
+        raise ValueError(f'model must be one of {FORECAST_MODELS}, got {model!r}')
     week = float(week)
+    hist, frame, source = _prepare(history, team_form, season, week, frame)
+    if model == QB_LINKED:
+        frames, draws, skipped, fits, covered = _forecast_qb_linked(hist, frame, season, week, settings,
+                                                                    window_seasons, min_train_rows)
+    else:
+        frames, draws, skipped, fits, covered = _forecast_independent(hist, frame, season, week, settings,
+                                                                      window_seasons, models, min_train_rows)
+
+    n = min(d.shape[0] for d in draws)
+    if any(d.shape[0] != n for d in draws):
+        log.warning('models returned different draw counts %s; truncating to %d', [d.shape[0] for d in draws], n)
+    all_draws = np.hstack([d[:n] for d in draws])
+    all_frame = pl.concat(frames, how='diagonal_relaxed')
+    not_covered = frame.filter(~pl.col('position').is_in(covered))
+    skipped_all = pl.concat(
+        [*skipped, not_covered.with_columns(pl.lit(None, pl.String).alias('model'),
+                                            pl.lit('position not modelled').alias('reason'))],
+        how='diagonal_relaxed')
+    meta = {'source': source, 'forecast_model': model, 'window_seasons': window_seasons,
+            'settings': asdict(settings), 'fits': fits, 'n_draws': n,
+            'has_outcomes': bool(TARGET_COL in all_frame.columns
+                                 and all_frame[TARGET_COL].null_count() < all_frame.height)}
+    return WeekForecast(season=season, week=week, frame=all_frame, draws=all_draws,
+                        skipped=skipped_all.select([c for c in (*SUMMARY_COLS, 'model', 'reason')
+                                                    if c in skipped_all.columns]),
+                        meta=meta)
+
+
+def _prepare(history, team_form, season, week, frame):
+    """Training history (before the week, team form joined, one position per
+    player) and the rows to forecast, prepared identically."""
     hist = D.join_team_form(history.filter(D.before(season, week)), team_form)
     if frame is None:
         frame = D.week_rows(history, season, week)
@@ -109,12 +153,25 @@ def forecast_week(history: pl.DataFrame, team_form: pl.DataFrame, season: int, w
     if 'team_spread' not in frame.columns:
         frame = D.add_vegas_features(frame)
     frame = D.join_team_form(frame, team_form)
-
     # one position per player (his most frequent listing up to now), applied
     # identically to training rows and forecast rows
     hist = D.with_primary_position(hist)
     frame = D.with_primary_position(frame, reference=hist)
+    return hist, frame, source
 
+
+def _fit_info(fm, keep, ok) -> dict:
+    return {'n_train': fm.n_train, 'n_players': len(fm.prep.players), 'n_scored': keep.height,
+            'n_skipped': int((~ok).sum()), 'fit_time': round(fm.fit_time, 1),
+            'divergences': fm.divergences, 'max_rhat': fm.max_rhat, 'min_ess_bulk': fm.min_ess_bulk}
+
+
+def _skip(rows, ok, name):
+    return rows.filter(~pl.Series(ok)).with_columns(
+        pl.lit(name).alias('model'), pl.lit('player not in training window / time out of range').alias('reason'))
+
+
+def _forecast_independent(hist, frame, season, week, settings, window_seasons, models, min_train_rows):
     frames, draws, skipped, fits = [], [], [], {}
     for name in models:
         cfg = MODELS[name]
@@ -126,29 +183,40 @@ def forecast_week(history: pl.DataFrame, team_form: pl.DataFrame, season: int, w
         fm: FittedModel = fit(train, cfg, settings)
         ok = fm.prep.eligible(rows)
         keep = rows.filter(pl.Series(ok))
-        skipped.append(rows.filter(~pl.Series(ok)).with_columns(
-            pl.lit(name).alias('model'), pl.lit('player not in training window / time out of range').alias('reason')))
+        skipped.append(_skip(rows, ok, name))
         draws.append(fm.predict(keep))
         frames.append(keep.with_columns(pl.lit(name).alias('model')))
-        fits[name] = {'n_train': fm.n_train, 'n_players': len(fm.prep.players), 'n_scored': keep.height,
-                          'n_skipped': int((~ok).sum()), 'fit_time': round(fm.fit_time, 1),
-                          'divergences': fm.divergences, 'max_rhat': fm.max_rhat, 'min_ess_bulk': fm.min_ess_bulk}
+        fits[name] = _fit_info(fm, keep, ok)
         log.info('%s: scored %d rows, skipped %d', name, keep.height, (~ok).sum())
+    return frames, draws, skipped, fits, [p for m in models for p in MODELS[m].positions]
 
-    n = min(d.shape[0] for d in draws)
-    if any(d.shape[0] != n for d in draws):
-        log.warning('models returned different draw counts %s; truncating to %d', [d.shape[0] for d in draws], n)
-    all_draws = np.hstack([d[:n] for d in draws])
-    all_frame = pl.concat(frames, how='diagonal_relaxed')
-    not_covered = frame.filter(~pl.col('position').is_in([p for m in models for p in MODELS[m].positions]))
-    skipped_all = pl.concat(
-        [*skipped, not_covered.with_columns(pl.lit(None, pl.String).alias('model'),
-                                            pl.lit('position not modelled').alias('reason'))],
-        how='diagonal_relaxed')
-    meta = {'source': source, 'window_seasons': window_seasons, 'settings': asdict(settings), 'fits': fits,
-                'n_draws': n, 'has_outcomes': bool(TARGET_COL in all_frame.columns
-                                             and all_frame[TARGET_COL].null_count() < all_frame.height)}
-    return WeekForecast(season=season, week=week, frame=all_frame, draws=all_draws,
-                        skipped=skipped_all.select([c for c in (*SUMMARY_COLS, 'model', 'reason')
-                                                    if c in skipped_all.columns]),
-                        meta=meta)
+
+def _forecast_qb_linked(hist, frame, season, week, settings, window_seasons, min_train_rows):
+    """Two-stage fit (QB, then skill on the QB residuals) and correlated draws."""
+    hist = D.add_trail_pts(hist)                                   # leak-free: previous games only
+    frame = D.add_trail_pts_for_week(frame, hist, season, week)
+    window = D.training_window(hist, season, week, window_seasons)
+    train_s, train_q = D.model_frame(window, HURDLE_SKILL), D.model_frame(window, HET_GP_QB_VEGAS)
+    for cfg, tr in ((HURDLE_SKILL, train_s), (HET_GP_QB_VEGAS, train_q)):
+        if tr.height < min_train_rows:
+            raise ValueError(f'{cfg.name}: only {tr.height} training rows before {season} week {week:g}')
+    fit_ = fit_qb_linked(train_s, train_q, settings)
+
+    rows_s, rows_q = D.model_frame(frame, HURDLE_SKILL), D.model_frame(frame, HET_GP_QB_VEGAS)
+    ok_s, ok_q = fit_.skill.prep.eligible(rows_s), fit_.qb.prep.eligible(rows_q)
+    keep_s, keep_q = rows_s.filter(pl.Series(ok_s)), rows_q.filter(pl.Series(ok_q))
+    S_s, S_q, qrow = fit_.predict(keep_s, keep_q)
+
+    linked = qrow != NO_QB
+    fits = {HURDLE_SKILL.name: {**_fit_info(fit_.skill, keep_s, ok_s), 'lam_rec': fit_.skill.loadings(),
+                                'share_linked_to_qb': float(linked.mean()) if linked.size else 0.0},
+            HET_GP_QB_VEGAS.name: {**_fit_info(fit_.qb, keep_q, ok_q),
+                                   'train_residual_sd': float(fit_.r_train.std())}}
+    if linked.size and linked.mean() < 0.8:
+        log.warning('only %.0f%% of skill rows matched a starting QB', 100 * linked.mean())
+    log.info('qb_linked: scored %d skill + %d QB rows, skipped %d + %d; lam_rec %s', keep_s.height, keep_q.height,
+             (~ok_s).sum(), (~ok_q).sum(), {k: round(v, 3) for k, v in fit_.skill.loadings().items()})
+    frames = [keep_s.with_columns(pl.lit(HURDLE_SKILL.name).alias('model')),
+              keep_q.with_columns(pl.lit(HET_GP_QB_VEGAS.name).alias('model'))]
+    skipped = [_skip(rows_s, ok_s, HURDLE_SKILL.name), _skip(rows_q, ok_q, HET_GP_QB_VEGAS.name)]
+    return frames, [S_s, S_q], skipped, fits, [*HURDLE_SKILL.positions, *HET_GP_QB_VEGAS.positions]

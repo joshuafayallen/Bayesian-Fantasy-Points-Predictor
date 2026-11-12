@@ -176,7 +176,7 @@ def score_matchups(fc: WeekForecast, rosters: dict, schedule_round, rules=RISK_R
         oracle_a = oracle_total(frame, pool_a)
         for rule in rules:
             kw = dict(rule_kwargs.get(rule, {}))
-            smart = de.decide(rule, S, frame, pool_a, opp_totals=base_b.totals if rule == 'head_to_head' else None, **kw)
+            smart = de.decide(rule, S, frame, pool_a, opp_totals=base_b.totals, **kw)
             smart_real = realized_total(frame, ids(smart))
             row = {'season': fc.season, 'week': fc.week, 'rule': rule, 'team_a': team_a, 'team_b': team_b,
                        'baseline_a_realized': base_a_real, 'baseline_b_realized': base_b_real,
@@ -204,7 +204,7 @@ def score_matchups(fc: WeekForecast, rosters: dict, schedule_round, rules=RISK_R
 
 def run_league_week(season: int, week: float, history: pl.DataFrame, team_form: pl.DataFrame,
                     rosters: dict, out_dir: Path | str, settings: SamplerSettings = SamplerSettings(),  # noqa: B008
-                    rules=RISK_RULES, rule_kwargs=None, overwrite: bool = False):
+                    rules=RISK_RULES, rule_kwargs=None, overwrite: bool = False, model: str | None = None):
     """Forecast (season, week) on its played rows (cached under
     out_dir/forecasts), score every matchup for every rule, write one JSON."""
     out_dir = Path(out_dir)
@@ -216,7 +216,8 @@ def run_league_week(season: int, week: float, history: pl.DataFrame, team_form: 
     if (fc_dir / 'meta.json').exists():
         fc = WeekForecast.load(fc_dir)
     else:
-        fc = forecast_week(history, team_form, season, week, settings=settings)
+        fc = forecast_week(history, team_form, season, week, settings=settings,
+                           **({} if model is None else {'model': model}))
         fc.save(fc_dir)
     names = list(rosters)
     sched = round_robin_schedule(names)

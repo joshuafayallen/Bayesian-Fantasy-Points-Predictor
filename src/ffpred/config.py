@@ -106,6 +106,28 @@ MODELS: dict[str, HetConfig] = {c.name: c for c in (HET_GP_VEGAS, HET_GP_QB_VEGA
 # Every fantasy position is covered by exactly one model.
 MODEL_FOR_POSITION = {p: c for c in MODELS.values() for p in c.positions}
 
+# ------------------------------------------------- QB-linked model (production)
+# Two stages per fit (see qblink.py and claude/joint-qb-skill-correlation.md):
+#   1. het_gp_qb_vegas, unchanged, fit alone -> each training QB game's standardized residual r
+#   2. hurdle-gamma skill model (log link) whose log-mean loads on the starting QB's r
+# Forecast draws for a QB and his receivers share the QB's surprise, so stacks co-move.
+# Not in MODELS: MODELS holds het_gp configs built by model.build_het_gp.
+HURDLE_SKILL = HetConfig(
+    name='hurdle_qblink',
+    positions=HET_GP_VEGAS.positions,
+    std_cols=HET_GP_VEGAS.std_cols,
+    time_col='tenure', asymmetric_bump=False, noise_gp=False,
+    t_peak=(4.0, 1.25), season_ell=(0.8, 2.5),
+)
+QB_LINKED = 'qb_linked'                       # forecast / backtest model name
+FORECAST_MODELS = (QB_LINKED, 'independent')  # 'independent' = het_gp_vegas + het_gp_qb_vegas, no link
+DUD_LINE = 0.05          # points at or below this count as a dud (scores come in 0.1 steps)
+TRAIL_WINDOW = 8         # games in the trailing mean that sets the gamma CV level
+# Which QB row is a team-game's starter: training uses the game's own snap share (who
+# actually played); a forecast can only use pre-game information.
+STARTER_COLS_TRAIN = ('offense_pct', 'trail_pts')
+STARTER_COLS_FORECAST = ('lag_offense_pct', 'trail_pts')
+
 
 @dataclass(frozen=True)
 class SamplerSettings:

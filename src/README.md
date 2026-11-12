@@ -1,4 +1,4 @@
-# src — production pipeline for `het_gp_vegas` / `het_gp_qb_vegas`
+# src — production pipeline for the QB-linked model (`het_gp_qb_vegas` + `hurdle_qblink`)
 
 A cleaned-up, tested rewrite of the earlier research code (the old `src/`, now in git history) that does one job: forecast a week's
 fantasy points with the two het_gp Vegas models and feed those draws to the
@@ -8,8 +8,27 @@ the team-pregame features) stayed in the research code.
 
 | model | positions | time axis | config |
 |---|---|---|---|
-| `het_gp_vegas` | RB, WR, TE | tenure | `config.HET_GP_VEGAS` |
 | `het_gp_qb_vegas` | QB | age | `config.HET_GP_QB_VEGAS` |
+| `hurdle_qblink` (production) | RB, WR, TE | tenure | `config.HURDLE_SKILL` |
+| `het_gp_vegas` (previous skill model, `--model independent`) | RB, WR, TE | tenure | `config.HET_GP_VEGAS` |
+
+The production forecast (`--model qb_linked`, the default) fits in two stages
+(`qblink.py`):
+
+1. `het_gp_qb_vegas`, unchanged, fit alone. Each training QB game gets a
+   standardized residual r: how far the QB beat or missed his projection.
+2. `hurdle_qblink` for RB/WR/TE: a hurdle-gamma on the points scale (log
+   link; a dud probability with its own predictors; a gamma whose CV falls
+   with the player's trailing 8-game level), with `lam_rec[pos] * r` in the
+   log-mean of every receiver whose starting QB played that game. r is data,
+   so receivers learn from the QB but can't bend the QB fit.
+
+Forecast draws give a QB and his receivers the same QB surprise, so stacks
+co-move; each receiver's projection is unchanged by the link. 12-fold
+backtest vs the previous models: skill CRPS -0.150 +- 0.016 (12/12 folds
+better), QB +0.011 +- 0.014 (no change), QB+WR1+TE1 stack 80% coverage 0.80
+(independent draws 0.75). Details: `claude/joint-qb-skill-correlation.md` and
+`claude/hurdle-gamma-likelihood.md` in the project.
 
 Both use `team_spread` and `vegas_team_total` (the player's side of the line)
 in place of the home-perspective `spread_line`, plus last week's team form.
@@ -28,7 +47,8 @@ src/
     data.py             load + validate processed data, Vegas features, as-of team-form join, windows
     upcoming.py         model rows for a week that hasn't been played (schedule + history)
     model.py            HetPrep / build_het_gp (model unchanged), fit, predict, diagnostics
-    forecast.py         both models -> WeekForecast (frame + joint draws), save/load
+    qblink.py           QB-linked model: hurdle-gamma skill model, two-stage fit, correlated draws
+    forecast.py         qb_linked (default) or independent models -> WeekForecast (frame + joint draws)
     decision_engine.py  lineup rules (unchanged logic) + decide() dispatcher
     backtest.py         walk-forward folds, one JSON per fold, summaries
     league.py           league simulation of the decision rules (player_id based)
@@ -45,7 +65,8 @@ Run from the project root (`uv run python ...` if you use the uv env).
 python src/ff.py build-data
 # 2. refresh team form (the as-of join otherwise carries the last fitted week forward)
 python src/ff.py build-team-form
-# 3. fit both models and forecast the coming week -> forecasts/2026_wk05/
+# 3. fit the QB-linked model and forecast the coming week -> forecasts/2026_wk05/
+#    (--model independent for the previous het_gp pair)
 python src/ff.py forecast 2026 5
 # 4. choose a lineup
 python src/ff.py decide forecasts/2026_wk05 --roster my_roster.txt --rule maximize_expected
@@ -83,6 +104,9 @@ replays a past week on its actual rows instead.
 python src/ff.py backtest --seasons "2019 2023-2025" --weeks "6 9 12 15" \
     --models het_gp_vegas,baseline:het_gp_vegas --run-dir results/backtest/vegas
 python src/ff.py summarize-backtest results/backtest/vegas
+# the QB-linked model: one fit per fold, two records (qb_linked_skill, qb_linked_qb)
+python src/ff.py backtest --seasons 2023-2025 --weeks "4 8 12 16" --models qb_linked,het_gp_vegas,het_gp_qb_vegas \
+    --run-dir results/backtest/qb_linked
 
 # tail calibration of a replayed week (forecast made with --source played)
 python src/ff.py check-forecast forecasts/nuts_2025_wk09
@@ -191,9 +215,16 @@ Parity checks done while building this:
 
 - Rookies and anyone not in the 3-season window can't be forecast (no
   career level). They're listed in `skipped.parquet`.
-- QB and skill draws come from separate fits, so the joint draws carry no
-  QB-receiver correlation; head-to-head and CVaR rules see sums of
-  independent position groups.
+- The QB link is within a team only: a receiver's draws don't move with the
+  opposing QB (the out-of-sample check found ~0.05 for WRs, 0.14 for TEs;
+  left out for season-long use). The out-of-sample WR-QB correlation is
+  about 0.05 lower than observed (0.18 vs 0.24).
+- The forecast picks each team's starting QB by last game's snap share
+  (`lag_offense_pct`), then trailing points. A QB change announced during the
+  week isn't seen; check `share_linked_to_qb` in `meta.json`.
+- QB draws are Normal with one sd for every QB (backups can get negative
+  floors); star skill-player intervals are still somewhat too wide (sd ratio
+  ~1.7 at 18+ projected points).
 - The model is conditional on a player appearing in the box score. The
   roster status filter removes IR / practice squad, but not game-day
   inactives or "questionable" tags; `decide` will start a player who ends up

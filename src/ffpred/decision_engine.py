@@ -609,7 +609,13 @@ def cvar_averse(draws, frame, target, alpha=0.05, lam=1.0, roster=ROSTER,
  
         maximize   E[total]  -  lambda * CVaR_alpha( shortfall(total, target) )
  
-    `target` is whatever "meeting demand" means for your decision this
+    `target` is a number, or an array with one value per draw (e.g. your
+    opponent's lineup totals from the SAME draws): then the shortfall in each
+    scenario is max(opponent - you, 0), the margin you lose by, and CVaR is the
+    average of your worst losing margins. Pairing keeps shared uncertainty (the
+    same games, a QB and his receivers) in the comparison.
+
+    A fixed `target` is whatever "meeting demand" means for your decision this
     week: a must-clear threshold, a waiver-wire replacement level, or (more
     interestingly) your opponent's projected total. `lam` trades average
     points for tail safety -- lam=0 recovers `maximize_expected` exactly;
@@ -626,11 +632,25 @@ def cvar_averse(draws, frame, target, alpha=0.05, lam=1.0, roster=ROSTER,
     rules once draws gets into the tens of thousands. val_frac>0 then
     reports CVaR/expected on scenarios the search never touched.
     """
-    search, report, _ = _prepare_scenarios(draws, n_search_scenarios, val_frac, rng)
+    paired = np.ndim(target) == 1
+    if paired:
+        # opponent totals per draw: carry them as an extra column so every
+        # scenario split / subsample keeps them aligned with the draws
+        target = np.asarray(target, dtype=float)
+        if len(target) != draws.shape[0]:
+            raise ValueError(f'a per-draw target needs {draws.shape[0]} values (one per draw), got {len(target)}')
+        aug_search, aug_report, _ = _prepare_scenarios(np.column_stack([draws, target]),
+                                                       n_search_scenarios, val_frac, rng)
+        search, t_search = aug_search[:, :-1], aug_search[:, -1]
+        report, t_report = aug_report[:, :-1], aug_report[:, -1]
+    else:
+        search, report, _ = _prepare_scenarios(draws, n_search_scenarios, val_frac, rng)
+        t_search = t_report = target
 
     def objective(t, idx):
         tt = t[idx]
-        return float(tt.mean() - lam * cvar(shortfall(tt, target), alpha=alpha))
+        tgt = t_search[idx] if paired else target
+        return float(tt.mean() - lam * cvar(shortfall(tt, tgt), alpha=alpha))
 
     top = _TopK()
     full = None
@@ -640,10 +660,10 @@ def cvar_averse(draws, frame, target, alpha=0.05, lam=1.0, roster=ROSTER,
         top.offer(objective(totals, full), cand)
     val, _, cand, _ = top.best
     totals_search = candidate_totals(search, cand)
-    risk_search = cvar(shortfall(totals_search, target), alpha=alpha)
+    risk_search = cvar(shortfall(totals_search, t_search), alpha=alpha)
  
     totals_report = candidate_totals(report, cand)
-    risk_report = cvar(shortfall(totals_report, target), alpha=alpha)
+    risk_report = cvar(shortfall(totals_report, t_report), alpha=alpha)
     extra = _validated_stats(totals_search, totals_report, bool(val_frac))
     if val_frac:
         extra['cvar_in_sample'] = risk_search
@@ -651,7 +671,8 @@ def cvar_averse(draws, frame, target, alpha=0.05, lam=1.0, roster=ROSTER,
     extra.update(_tie_stats(frame, top, _compare_by(objective, search, rng=rng)))
     return _package(frame, cand, totals_report, objective_value=val, rule='cvar_averse',
                     cvar=risk_report,
-                    target=target, alpha=alpha, lam=lam, **extra)
+                    target=float(np.mean(t_report)) if paired else target,
+                    target_paired=paired, alpha=alpha, lam=lam, **extra)
  
  
 def head_to_head_optimize(draws, frame, opp_totals, roster=ROSTER,
@@ -1087,22 +1108,31 @@ RULES = ('maximize_expected', 'chance_constrained', 'cvar_averse', 'head_to_head
 
 def decide(rule, draws, frame, pool, *, floor=None, beta=0.90, target=None, alpha=0.10, lam=1.0,
            opp_pool=None, opp_totals=None, **kw):
-    """One entry point for the CLI / league validation. Defaults are relative
-    to the maximize_expected lineup from the same pool: floor = its p10
-    total, target = its expected total."""
+    """One entry point for the CLI / league validation.
+
+    With an opponent (``opp_pool`` or ``opp_totals``, his lineup's totals from
+    the same draws): cvar_averse's target is his total in each draw (CVaR of
+    your losing margin), chance_constrained's floor is his expected total.
+    Without one, defaults are relative to your own maximize_expected lineup:
+    floor = its p10 total, target = its expected total. With that floor the
+    mean lineup always qualifies, so chance_constrained returns it: give it a
+    floor or an opponent. An explicit ``floor`` / ``target`` always wins."""
     base = maximize_expected(draws, frame, pool=pool, **kw)
     if rule == 'maximize_expected':
         return base
+    if opp_totals is None and opp_pool is not None:
+        opp_totals = maximize_expected(draws, frame, pool=opp_pool, **kw).totals
     if rule == 'chance_constrained':
-        return chance_constrained(draws, frame, floor=base.stats['floor_p10'] if floor is None else floor,
-                                  beta=beta, pool=pool, **kw)
+        if floor is None:
+            floor = float(np.mean(opp_totals)) if opp_totals is not None else base.stats['floor_p10']
+        return chance_constrained(draws, frame, floor=floor, beta=beta, pool=pool, **kw)
     if rule == 'cvar_averse':
-        return cvar_averse(draws, frame, target=base.stats['expected'] if target is None else target,
-                           alpha=alpha, lam=lam, pool=pool, **kw)
+        if target is None:
+            target = opp_totals if opp_totals is not None and len(opp_totals) == draws.shape[0] \
+                else (float(np.mean(opp_totals)) if opp_totals is not None else base.stats['expected'])
+        return cvar_averse(draws, frame, target=target, alpha=alpha, lam=lam, pool=pool, **kw)
     if rule == 'head_to_head':
         if opp_totals is None:
-            if opp_pool is None:
-                raise ValueError('head_to_head needs opp_pool or opp_totals')
-            opp_totals = maximize_expected(draws, frame, pool=opp_pool, **kw).totals
+            raise ValueError('head_to_head needs opp_pool or opp_totals')
         return head_to_head_optimize(draws, frame, opp_totals, pool=pool, **kw)
     raise ValueError(f'unknown rule {rule!r}; expected one of {RULES}')

@@ -1,0 +1,67 @@
+17:03:54 INFO ffpred.data: dropped 6 duplicate (player_id, season, week) rows
+17:03:54 INFO ffpred.league: mock draft: 12 duplicate name matches collapsed to one player_id per pick
+17:03:54 INFO ffpred.league: skip Matt Harmon vs Derek Brown 2025 wk2: not enough TE in pool: need 1, have 0
+17:03:55 INFO ffpred.league: skip Ray Garvin vs Dave Kluge 2025 wk2: not enough TE in pool: need 1, have 0
+17:03:55 INFO ffpred.league: 2025 wk2: 12 matchup-rule rows -> results/league/yahoo2025/league__2025__wk02.json
+17:03:56 INFO ffpred.league: skip Derek Brown vs Ryan Heath 2025 wk3: not enough TE in pool: need 1, have 0
+17:03:56 INFO ffpred.league: skip Ian Hartitz vs Chris Allen 2025 wk3: not enough WR in pool: need 2, have 1
+17:03:56 INFO ffpred.league: skip Ray Garvin vs Nathan Jahnke 2025 wk3: not enough QB in pool: need 1, have 0
+17:03:56 INFO ffpred.league: skip Rich Hribar vs Jennifer Eakins 2025 wk3: not enough TE in pool: need 1, have 0
+17:03:56 INFO ffpred.league: 2025 wk3: 6 matchup-rule rows -> results/league/yahoo2025/league__2025__wk03.json
+17:03:56 INFO ffpred.league: skip Matt Harmon vs Ryan Heath 2025 wk4: not enough QB in pool: need 1, have 0
+17:03:57 INFO ffpred.league: skip Derek Brown vs Chris Allen 2025 wk4: not enough TE in pool: need 1, have 0
+17:03:57 INFO ffpred.league: skip Ray Garvin vs Rich Hribar 2025 wk4: not enough QB in pool: need 1, have 0
+17:03:57 INFO ffpred.league: 2025 wk4: 9 matchup-rule rows -> results/league/yahoo2025/league__2025__wk04.json
+17:03:57 INFO ffpred.league: skip Matt Harmon vs Dave Kluge 2025 wk5: not enough QB in pool: need 1, have 0
+17:03:57 INFO ffpred.league: skip Ryan Heath vs Chris Allen 2025 wk5: not enough TE in pool: need 1, have 0
+17:03:57 INFO ffpred.league: skip Derek Brown vs Jennifer Eakins 2025 wk5: not enough TE in pool: need 1, have 0
+17:03:57 INFO ffpred.league: skip Justin Boone vs Rich Hribar 2025 wk5: not enough QB in pool: need 1, have 0
+17:03:57 INFO ffpred.league: skip Ian Hartitz vs Ray Garvin 2025 wk5: not enough FLEX-eligible players left after filling fixed slots: need 1 from ('RB', 'WR', 'TE'), only 0 would remain after the fixed roster slots are filled. (Typically a thin bench running out of RB/WR/TE depth this week -- byes/injuries ate the pool.)
+17:03:57 INFO ffpred.league: 2025 wk5: 3 matchup-rule rows -> results/league/yahoo2025/league__2025__wk05.json
+17:03:57 INFO ffpred.league: skip Matt Harmon vs Chris Allen 2025 wk6: not enough QB in pool: need 1, have 0
+17:03:57 INFO ffpred.league: skip Ben Gretch vs Rich Hribar 2025 wk6: not enough TE in pool: need 1, have 0
+17:03:57 INFO ffpred.league: skip Derek Brown vs Ray Garvin 2025 wk6: not enough TE in pool: need 1, have 0
+17:03:57 INFO ffpred.league: skip Justin Boone vs Ian Hartitz 2025 wk6: not enough WR in pool: need 2, have 1
+17:03:57 INFO ffpred.league: 2025 wk6: 6 matchup-rule rows -> results/league/yahoo2025/league__2025__wk06.json
+17:03:57 INFO ffpred.league: skip Matt Harmon vs Nathan Jahnke 2025 wk7: not enough QB in pool: need 1, have 0
+17:03:57 INFO ffpred.league: skip Chris Allen vs Jennifer Eakins 2025 wk7: not enough QB in pool: need 1, have 0
+17:03:57 INFO ffpred.league: skip Dave Kluge vs Rich Hribar 2025 wk7: not enough TE in pool: need 1, have 0
+17:03:57 INFO ffpred.league: skip Ryan Heath vs Ray Garvin 2025 wk7: not enough QB in pool: need 1, have 0
+17:03:57 INFO ffpred.league: skip Ben Gretch vs Ian Hartitz 2025 wk7: not enough QB in pool: need 1, have 0
+17:03:58 INFO ffpred.league: 2025 wk7: 3 matchup-rule rows -> results/league/yahoo2025/league__2025__wk07.json
+17:03:58 INFO ffpred.league: skip Matt Harmon vs Jennifer Eakins 2025 wk8: not enough QB in pool: need 1, have 0
+17:03:58 INFO ffpred.league: skip Nathan Jahnke vs Rich Hribar 2025 wk8: not enough RB in pool: need 2, have 1
+17:03:58 INFO ffpred.league: skip Chris Allen vs Ray Garvin 2025 wk8: not enough QB in pool: need 1, have 0
+17:03:58 INFO ffpred.league: skip Dave Kluge vs Ian Hartitz 2025 wk8: not enough WR in pool: need 2, have 1
+17:03:58 INFO ffpred.league: skip Ryan Heath vs Justin Boone 2025 wk8: not enough QB in pool: need 1, have 0
+17:03:58 INFO ffpred.league: skip Ben Gretch vs Derek Brown 2025 wk8: not enough RB in pool: need 2, have 1
+17:03:58 INFO ffpred.league: 2025 wk8: 0 matchup-rule rows -> results/league/yahoo2025/league__2025__wk08.json
+17:03:58 INFO ffpred.league: skip Matt Harmon vs Rich Hribar 2025 wk9: not enough RB in pool: need 2, have 1
+17:03:58 INFO ffpred.league: skip Jennifer Eakins vs Ray Garvin 2025 wk9: not enough QB in pool: need 1, have 0
+17:03:58 INFO ffpred.league: skip Nathan Jahnke vs Ian Hartitz 2025 wk9: not enough QB in pool: need 1, have 0
+17:03:58 INFO ffpred.league: skip Chris Allen vs Justin Boone 2025 wk9: not enough QB in pool: need 1, have 0
+17:03:58 INFO ffpred.league: 2025 wk9: 6 matchup-rule rows -> results/league/yahoo2025/league__2025__wk09.json
+shape: (3, 12)
+┌────────────────────┬──────────┬───────┬───────────────────┬───────────────┬─────────┬──────┬───────────┬─────────────┬─────────────────┬─────────────┬───────────────┐
+│ rule               ┆ matchups ┆ weeks ┆ win_rate_baseline ┆ win_rate_rule ┆ rescued ┆ cost ┆ mcnemar_p ┆ same_lineup ┆ regret_baseline ┆ regret_rule ┆ near_tie_rule │
+│ ---                ┆ ---      ┆ ---   ┆ ---               ┆ ---           ┆ ---     ┆ ---  ┆ ---       ┆ ---         ┆ ---             ┆ ---         ┆ ---           │
+│ str                ┆ i64      ┆ i64   ┆ f64               ┆ f64           ┆ i64     ┆ i64  ┆ f64       ┆ f64         ┆ f64             ┆ f64         ┆ f64           │
+╞════════════════════╪══════════╪═══════╪═══════════════════╪═══════════════╪═════════╪══════╪═══════════╪═════════════╪═════════════════╪═════════════╪═══════════════╡
+│ chance_constrained ┆ 15       ┆ 7     ┆ 0.467             ┆ 0.467         ┆ 0       ┆ 0    ┆ NaN       ┆ 1.000       ┆ 8.233           ┆ 8.233       ┆ 0.467         │
+│ cvar_averse        ┆ 15       ┆ 7     ┆ 0.467             ┆ 0.467         ┆ 0       ┆ 0    ┆ NaN       ┆ 0.933       ┆ 8.233           ┆ 7.887       ┆ 0.333         │
+│ head_to_head       ┆ 15       ┆ 7     ┆ 0.467             ┆ 0.467         ┆ 0       ┆ 0    ┆ NaN       ┆ 0.867       ┆ 8.233           ┆ 9.033       ┆ 0.467         │
+└────────────────────┴──────────┴───────┴───────────────────┴───────────────┴─────────┴──────┴───────────┴─────────────┴─────────────────┴─────────────┴───────────────┘
+--- calibration of predicted P(win), baseline lineups
+shape: (5, 4)
+┌────────┬────────────────┬────────────────┬─────┐
+│ bucket ┆ mean_predicted ┆ empirical_rate ┆ n   │
+│ ---    ┆ ---            ┆ ---            ┆ --- │
+│ u32    ┆ f64            ┆ f64            ┆ u32 │
+╞════════╪════════════════╪════════════════╪═════╡
+│ 0      ┆ 0.192          ┆ 0.333          ┆ 3   │
+│ 1      ┆ 0.356          ┆ 0.667          ┆ 3   │
+│ 2      ┆ 0.480          ┆ 0.000          ┆ 3   │
+│ 3      ┆ 0.643          ┆ 0.333          ┆ 3   │
+│ 4      ┆ 0.828          ┆ 1.000          ┆ 3   │
+└────────┴────────────────┴────────────────┴─────┘
+--- chance_constrained: promised p_clear 0.900, realized clear rate 0.800, feasible 100.0%

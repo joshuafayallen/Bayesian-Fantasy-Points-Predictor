@@ -2,7 +2,8 @@
 
 One fold = one (model, season, week): fit on the ``WINDOW_SEASONS`` seasons
 before the week, forecast that week's played rows, score against what
-happened. Each fold is written to its own JSON file in a run directory, so
+happened. The QB-linked model (``run_qb_linked_fold``) fits both stages once
+per fold and writes two records, ``qb_linked_skill`` and ``qb_linked_qb``. Each fold is written to its own JSON file in a run directory, so
 sweeps resume after an interruption and can run in parallel processes
 without clobbering a shared CSV.
 
@@ -28,8 +29,10 @@ import numpy as np
 import polars as pl
 
 from . import data as D
-from .config import MAX_WEEK, MIN_TRAIN_ROWS, MODELS, TARGET_COL, WINDOW_SEASONS, SamplerSettings
+from .config import (HET_GP_QB_VEGAS, HURDLE_SKILL, MAX_WEEK, MIN_TRAIN_ROWS, MODELS, QB_LINKED, TARGET_COL,
+                     WINDOW_SEASONS, SamplerSettings)
 from .model import fit
+from .qblink import NO_QB, fit_qb_linked
 from .scoring import TIER_LABELS, calibration_table, past_only_baseline, score
 
 log = logging.getLogger(__name__)
@@ -113,6 +116,14 @@ def run_fold(model_name: str, season: int, week: float, history: pl.DataFrame, t
                         'max_rhat': fm.max_rhat, 'min_ess_bulk': fm.min_ess_bulk}
         coefs = fm.coefs().to_dicts()
 
+    return _write_record(out, model_name, season, week, keep, S, train, test.height, fit_info, coefs,
+                         settings, eligibility, window_seasons)
+
+
+def _write_record(out: Path, model_name: str, season: int, week: float, keep: pl.DataFrame, S: np.ndarray,
+                  train: pl.DataFrame, n_test: int, fit_info: dict, coefs, settings: SamplerSettings,
+                  eligibility: str, window_seasons: int, extra: dict | None = None) -> dict:
+    """Score one model's draws on a fold's rows and write the fold JSON atomically."""
     y = keep[TARGET_COL].to_numpy()
     base = past_only_baseline(keep, train)
     metrics = score(y, S, baseline=base)
@@ -127,7 +138,7 @@ def run_fold(model_name: str, season: int, week: float, history: pl.DataFrame, t
     record = dict(model=model_name, season=season, week=week, method=settings.method,
                   sampler=settings.nuts_sampler if settings.method == 'nuts' else None,
                   eligibility=eligibility, window_seasons=window_seasons,
-                  n_test=test.height, n_dropped=test.height - keep.height, **fit_info, **metrics,
+                  n_test=n_test, n_dropped=n_test - keep.height, **fit_info, **metrics, **(extra or {}),
                   by_position=by_pos, by_tier=by_tier, coefs=coefs, settings={'draws': settings.draws, 'tune': settings.tune,
                                                                  'chains': settings.chains, 'seed': settings.seed})
     tmp = out.with_suffix('.json.tmp')
@@ -136,6 +147,65 @@ def run_fold(model_name: str, season: int, week: float, history: pl.DataFrame, t
     log.info('%s %d wk%g: n=%d crps=%.3f rmse=%.3f (base %.3f) cov80=%.2f', model_name, season, week,
              metrics['n'], metrics['crps'], metrics['rmse'], metrics['rmse_base'], metrics['cov80'])
     return record
+
+
+def run_qb_linked_fold(season: int, week: float, history: pl.DataFrame, team_form: pl.DataFrame,
+                       run_dir: Path | str, settings: SamplerSettings = SamplerSettings(),
+                       eligibility: str = 'model', window_seasons: int = WINDOW_SEASONS,
+                       primary_position_scope: str = 'asof', overwrite: bool = False,
+                       min_train_rows: int = MIN_TRAIN_ROWS) -> dict | None:
+    """One fold of the QB-linked model: both stages fit once, two records written,
+    '<qb_linked>_skill' (RB/WR/TE) and '<qb_linked>_qb' (QB), each scored on the
+    rows its block can score. Compare them with het_gp_vegas / het_gp_qb_vegas
+    folds via paired_diff. Returns {'skill': record, 'qb': record} or None."""
+    if eligibility not in ('model', 'legacy'):
+        raise ValueError("eligibility must be 'model' or 'legacy'")
+    week = float(week)
+    run_dir = Path(run_dir)
+    run_dir.mkdir(parents=True, exist_ok=True)
+    names = {'skill': f'{QB_LINKED}_skill', 'qb': f'{QB_LINKED}_qb'}
+    outs = {k: fold_path(run_dir, v, season, week) for k, v in names.items()}
+    if all(o.exists() for o in outs.values()) and not overwrite:
+        log.info('skip %s %d wk%g (exists)', QB_LINKED, season, week)
+        return None
+
+    df = D.join_team_form(history, team_form)
+    ref = df if primary_position_scope == 'all' else df.filter(
+        D.before(season, week) | ((pl.col('season') == season) & (pl.col('week') == week)))
+    df = D.add_trail_pts(D.with_primary_position(df, reference=ref))   # previous games only: leak-free
+    blocks = {}
+    for k, cfg in (('skill', HURDLE_SKILL), ('qb', HET_GP_QB_VEGAS)):
+        d = df.filter(pl.col('position').is_in(list(cfg.positions)))
+        blocks[k] = (D.training_window(d, season, week, window_seasons), D.week_rows(d, season, week).sort('player_id'))
+    if any(te.height == 0 or tr.height < min_train_rows for tr, te in blocks.values()):
+        log.info('skip %s %d wk%g: no test rows or too little training data', QB_LINKED, season, week)
+        return None
+
+    fit_ = fit_qb_linked(blocks['skill'][0], blocks['qb'][0], settings)
+    keep = {}
+    for k, prep in (('skill', fit_.skill.prep), ('qb', fit_.qb.prep)):
+        tr, te = blocks[k]
+        ok = prep.eligible(te)
+        if eligibility == 'legacy':
+            ok &= legacy_eligible(tr, te)
+        keep[k] = te.filter(pl.Series(ok))
+    if keep['skill'].height == 0 or keep['qb'].height == 0:
+        log.info('skip %s %d wk%g: no scoreable rows', QB_LINKED, season, week)
+        return None
+    S_s, S_q, qrow = fit_.predict(keep['skill'], keep['qb'])
+
+    records = {}
+    for k, fm, S, coefs, extra in (
+            ('skill', fit_.skill, S_s, fit_.skill.coefs().to_dicts(),
+             {'share_linked_to_qb': float((qrow != NO_QB).mean()),
+              **{f'lam_rec_{p}': v for p, v in fit_.skill.loadings().items()}}),
+            ('qb', fit_.qb, S_q, fit_.qb.coefs().to_dicts(), {'train_residual_sd': float(fit_.r_train.std())})):
+        fit_info = {'fit_time': fm.fit_time, 'n_train': fm.n_train, 'divergences': fm.divergences,
+                    'max_rhat': fm.max_rhat, 'min_ess_bulk': fm.min_ess_bulk}
+        tr, te = blocks[k]
+        records[k] = _write_record(outs[k], names[k], season, week, keep[k], S, tr, te.height, fit_info, coefs,
+                                   settings, eligibility, window_seasons, extra=extra)
+    return records
 
 
 # --------------------------------------------------------------- summarize

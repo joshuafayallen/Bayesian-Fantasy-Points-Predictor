@@ -12,7 +12,7 @@ from pathlib import Path
 import polars as pl
 
 # pyrefly: ignore [missing-import]
-from .config import PATHS, TARGET_COL, VEGAS_COLS, WINDOW_SEASONS, HetConfig
+from .config import PATHS, TARGET_COL, TRAIL_WINDOW, VEGAS_COLS, WINDOW_SEASONS, HetConfig
 
 log = logging.getLogger(__name__)
 
@@ -146,6 +146,28 @@ def week_rows(df: pl.DataFrame, season: int, week: float) -> pl.DataFrame:
     return df.filter((pl.col('season') == season) & (pl.col('week') == week))
 
 
+def add_trail_pts(df: pl.DataFrame, window: int = TRAIL_WINDOW) -> pl.DataFrame:
+    """``trail_pts``: mean of the player's previous ``window`` games (across
+    seasons), excluding the row's own game, so it is known before kickoff.
+    Null for a player's first game. Row order is preserved."""
+    return (df.with_row_index('_rid').sort('player_id', 'season', 'week')
+            .with_columns(pl.col(TARGET_COL).shift(1).rolling_mean(window_size=window, min_samples=1)
+                          .over('player_id').alias('trail_pts'))
+            .sort('_rid').drop('_rid'))
+
+
+def add_trail_pts_for_week(frame: pl.DataFrame, history: pl.DataFrame, season: int, week: float,
+                           window: int = TRAIL_WINDOW) -> pl.DataFrame:
+    """``trail_pts`` for the rows of one (season, week) -- upcoming or replayed --
+    from ``history`` strictly before that week. Same value add_trail_pts gives a
+    played row of that week."""
+    prior = history.filter(before(season, week)).sort('player_id', 'season', 'week')
+    trail = (prior.group_by('player_id', maintain_order=True)
+             .agg(pl.col(TARGET_COL).tail(window).mean().alias('trail_pts')))
+    return (frame.drop('trail_pts', strict=False)
+            .join(trail, on='player_id', how='left', maintain_order='left'))
+
+
 def model_frame(df: pl.DataFrame, cfg: HetConfig) -> pl.DataFrame:
     """Rows a model covers (by position), with the columns it needs checked."""
     require_columns(df, cfg.required_cols, f'{cfg.name} input')
@@ -157,6 +179,8 @@ __all__ = [
     'REQUIRED_PROCESSED_COLS',
     'VEGAS_COLS',
     'DataError',
+    'add_trail_pts',
+    'add_trail_pts_for_week',
     'add_vegas_features',
     'before',
     'join_team_form',

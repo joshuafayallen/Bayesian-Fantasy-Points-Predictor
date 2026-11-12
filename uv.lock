@@ -618,6 +618,7 @@ dependencies = [
     { name = "statsmodels" },
     { name = "tidydraws" },
     { name = "tqdm" },
+    { name = "xpress" },
     { name = "xpresslibs" },
 ]
 
@@ -660,6 +661,7 @@ requires-dist = [
     { name = "statsmodels", specifier = ">=0.14.6" },
     { name = "tidydraws", specifier = ">=0.4.3" },
     { name = "tqdm", specifier = ">=4.67.3" },
+    { name = "xpress", specifier = ">=9.9.1" },
     { name = "xpress", marker = "extra == 'milp'", specifier = ">=9.0" },
     { name = "xpresslibs", specifier = ">=9.9.1" },
 ]

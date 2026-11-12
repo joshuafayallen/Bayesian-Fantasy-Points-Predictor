@@ -159,3 +159,32 @@ def test_runner_up_differs_in_players_not_just_slots(scen):
     s = de.maximize_expected(draws, frame).stats
     best = set(de.maximize_expected(draws, frame).lineup['player_id'])
     assert set(s['runner_up']) != best
+
+
+def test_cvar_with_opponent_draws_is_paired(scen):
+    draws, frame = scen
+    rng = np.random.default_rng(5)
+    opp = draws[:, :7].sum(1) + rng.normal(0, 5, len(draws))      # correlated with some of our players
+    c = de.cvar_averse(draws, frame, target=opp, alpha=0.10, lam=2.0)
+    assert c.stats['target_paired'] and c.stats['target'] == pytest.approx(opp.mean())
+    # the reported CVaR is of the per-draw losing margin, not of a shortfall below a constant
+    assert c.stats['cvar'] == pytest.approx(de.cvar(np.maximum(opp - c.totals, 0), alpha=0.10))
+    # same answer when the search runs on a subsample: the opponent column stays aligned
+    sub = de.cvar_averse(draws, frame, target=opp, alpha=0.10, lam=2.0, n_search_scenarios=3000, rng=1)
+    assert sub.stats['cvar'] == pytest.approx(de.cvar(np.maximum(opp - sub.totals, 0), alpha=0.10))
+    with pytest.raises(ValueError, match='one per draw'):
+        de.cvar_averse(draws, frame, target=opp[:10])
+
+
+def test_decide_uses_the_opponent(scen):
+    draws, frame = scen
+    pool = frame['player_id'].to_list()
+    opp = draws[:, :7].sum(1) - 3.0
+    c = de.decide('cvar_averse', draws, frame, pool, opp_totals=opp)
+    assert c.stats['target_paired']
+    ch = de.decide('chance_constrained', draws, frame, pool, opp_totals=opp)
+    assert ch.stats['floor'] == pytest.approx(opp.mean())
+    # without an opponent the old defaults hold
+    base = de.maximize_expected(draws, frame, pool=pool)
+    assert de.decide('cvar_averse', draws, frame, pool).stats['target'] == pytest.approx(base.stats['expected'])
+    assert de.decide('chance_constrained', draws, frame, pool).stats['floor'] == pytest.approx(base.stats['floor_p10'])

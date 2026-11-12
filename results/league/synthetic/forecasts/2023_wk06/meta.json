@@ -1,0 +1,42 @@
+{
+  "season": 2023,
+  "week": 6.0,
+  "source": "played",
+  "window_seasons": 3,
+  "settings": {
+    "method": "nuts",
+    "nuts_sampler": "nutpie",
+    "draws": 1000,
+    "tune": 1000,
+    "chains": 4,
+    "target_accept": 0.95,
+    "advi_n": 20000,
+    "advi_draws": 500,
+    "seed": 0,
+    "extra": {}
+  },
+  "fits": {
+    "het_gp_vegas": {
+      "n_train": 10436,
+      "n_players": 710,
+      "n_scored": 249,
+      "n_skipped": 3,
+      "fit_time": 166.2,
+      "divergences": 0,
+      "max_rhat": 1.0,
+      "min_ess_bulk": 806.0
+    },
+    "het_gp_qb_vegas": {
+      "n_train": 1493,
+      "n_players": 105,
+      "n_scored": 34,
+      "n_skipped": 1,
+      "fit_time": 23.8,
+      "divergences": 0,
+      "max_rhat": 1.01,
+      "min_ess_bulk": 326.0
+    }
+  },
+  "n_draws": 4000,
+  "has_outcomes": true
+}

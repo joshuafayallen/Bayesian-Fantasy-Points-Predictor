@@ -325,13 +325,13 @@ def fit(train: pl.DataFrame, cfg: HetConfig, settings: SamplerSettings = Sampler
                        divergences=divergences, max_rhat=max_rhat, min_ess_bulk=min_ess)
 
 
-def _diagnostics(idata, chains: int) -> tuple[float | None, float | None]:
+def _diagnostics(idata, chains: int, var_names=SCALAR_DIAG_VARS) -> tuple[float | None, float | None]:
     """Max r_hat / min bulk ESS over the population-level parameters."""
     if chains < 2:
         return None, None
     try:
         import arviz as az
-        names = [v for v in SCALAR_DIAG_VARS if v in idata.posterior]
+        names = [v for v in var_names if v in idata.posterior]
         summ = az.summary(idata, var_names=names, kind='diagnostics')
         cols = {c.lower(): c for c in summ.columns}
         rhat = summ[cols['r_hat']].max() if 'r_hat' in cols else None

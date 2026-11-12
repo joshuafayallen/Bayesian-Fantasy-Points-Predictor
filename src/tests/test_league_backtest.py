@@ -107,7 +107,7 @@ def test_backtest_and_forecast_end_to_end_advi(tmp_path, league, league_team_for
     d = backtest.paired_diff(folds, 'het_gp_qb_vegas', 'baseline:het_gp_qb_vegas')
     assert d['n_folds'] == 1
 
-    fc = forecast_week(league, league_team_form, 2023, 5.0, settings=s, min_train_rows=20)
+    fc = forecast_week(league, league_team_form, 2023, 5.0, settings=s, min_train_rows=20, model='independent')
     assert fc.draws.shape == (40, fc.frame.height)
     assert set(fc.frame['position'].unique()) == {'QB', 'RB', 'WR', 'TE'}
     out = fc.save(tmp_path / 'fc')

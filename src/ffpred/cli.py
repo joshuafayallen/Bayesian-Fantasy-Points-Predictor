@@ -4,7 +4,8 @@ project root (or ``python -m ffpred`` with src-dev on PYTHONPATH).
 Weekly production flow:
     build-data        refresh processed-data/ff-processed.parquet from nflverse
     build-team-form   refit processed-data/team_form.parquet
-    forecast          fit both models, forecast a week -> forecasts/<season>_wk<NN>/
+    forecast          fit the QB-linked model (default) or the independent pair,
+                      forecast a week -> forecasts/<season>_wk<NN>/
     decide            pick a lineup for your roster from a saved forecast
                       (flags near-ties: start/sit calls within Monte Carlo noise)
 
@@ -26,7 +27,7 @@ from pathlib import Path
 
 import polars as pl
 
-from .config import MODELS, PATHS, SamplerSettings
+from .config import FORECAST_MODELS, MODELS, PATHS, QB_LINKED, SamplerSettings
 
 log = logging.getLogger('ffpred')
 
@@ -117,7 +118,7 @@ def cmd_forecast(a):
             sys.exit(f'no games found for {a.season} week {a.week}')
         rosters = fetch_rosters(a.season, a.week) if a.rosters == 'nflverse' else None
         frame = build_upcoming_frame(hist, sched, a.season, a.week, rosters=rosters, active_only=not a.include_inactive)
-    fc = forecast_week(hist, tf, a.season, a.week, frame=frame, settings=_settings(a))
+    fc = forecast_week(hist, tf, a.season, a.week, frame=frame, settings=_settings(a), model=a.model)
     out = fc.save(a.out or PATHS.forecasts_dir / f'{a.season}_wk{a.week:02d}')
     with pl.Config(tbl_rows=25, tbl_cols=12, tbl_width_chars=160, float_precision=1, fmt_str_lengths=24):
         print(fc.summary().drop('player_id').head(25))
@@ -177,7 +178,7 @@ def cmd_check_forecast(a):
 
 
 def cmd_backtest(a):
-    from .backtest import run_fold
+    from .backtest import run_fold, run_qb_linked_fold
     hist, tf = _load(a)
     run_dir = a.run_dir or PATHS.results_dir / 'backtest' / 'default'
     models = a.models.split(',') if a.models else list(MODELS)
@@ -185,8 +186,12 @@ def cmd_backtest(a):
         for w in _int_list(a.weeks):
             for m in models:
                 try:
-                    run_fold(m, s, w, hist, tf, run_dir, _settings(a), eligibility=a.eligibility,
-                             overwrite=a.overwrite)
+                    if m == QB_LINKED:
+                        run_qb_linked_fold(s, w, hist, tf, run_dir, _settings(a), eligibility=a.eligibility,
+                                           overwrite=a.overwrite)
+                    else:
+                        run_fold(m, s, w, hist, tf, run_dir, _settings(a), eligibility=a.eligibility,
+                                 overwrite=a.overwrite)
                 except Exception:
                     log.exception('fold %s %d wk%d failed', m, s, w)
                     if a.fail_fast:
@@ -210,7 +215,7 @@ def cmd_league(a):
         for w in _int_list(a.weeks):
             try:
                 run_league_week(s, w, hist, tf, rosters, out_dir, _settings(a), rules=RISK_RULES,
-                                rule_kwargs=rule_kwargs, overwrite=a.overwrite)
+                                rule_kwargs=rule_kwargs, overwrite=a.overwrite, model=a.model)
             except Exception:
                 log.exception('league %d wk%d failed', s, w)
                 if a.fail_fast:
@@ -247,9 +252,12 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument('--sampler', choices=['nutpie', 'pymc'], default='nutpie')
     s.set_defaults(fn=cmd_build_team_form)
 
-    s = sub.add_parser('forecast', help='forecast one week with both models')
+    s = sub.add_parser('forecast', help='forecast one week')
     s.add_argument('season', type=int)
     s.add_argument('week', type=int)
+    s.add_argument('--model', choices=list(FORECAST_MODELS), default=QB_LINKED,
+                   help="qb_linked: QB model + hurdle-gamma skill model linked to the starting QB "
+                        "(correlated stacks); independent: het_gp_vegas + het_gp_qb_vegas, no link")
     s.add_argument('--source', choices=['upcoming', 'played'], default='upcoming',
                    help="upcoming: build rows from the schedule + history (real use); "
                         "played: the week's actual rows (replay)")
@@ -268,7 +276,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument('--roster', required=True, help='player_ids/names (comma list) or a file')
     s.add_argument('--rule', choices=['maximize_expected', 'chance_constrained', 'cvar_averse', 'head_to_head'],
                    default='maximize_expected')
-    s.add_argument('--opponent', help="opponent's roster (head_to_head)")
+    s.add_argument('--opponent', help="opponent's roster: head_to_head needs it; with it, cvar_averse targets his "
+                                      "total in each draw (CVaR of your losing margin) and chance_constrained's floor "
+                                      "is his expected total")
     s.add_argument('--floor', type=float)
     s.add_argument('--beta', type=float, default=0.90)
     s.add_argument('--target', type=float)
@@ -284,7 +294,8 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser('backtest', help='walk-forward folds')
     s.add_argument('--seasons', required=True)
     s.add_argument('--weeks', required=True)
-    s.add_argument('--models', help=f"comma list from {list(MODELS)} and 'baseline:<model>'")
+    s.add_argument('--models', help=f"comma list from {[*MODELS, QB_LINKED]} and 'baseline:<model>' "
+                                    f"(default: {list(MODELS)}); {QB_LINKED} writes {QB_LINKED}_skill and _qb folds")
     s.add_argument('--run-dir', type=Path)
     s.add_argument('--eligibility', choices=['model', 'legacy'], default='model')
     s.add_argument('--overwrite', action='store_true')
@@ -300,6 +311,8 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser('league', help='league simulation of the decision rules')
     s.add_argument('--seasons', required=True)
     s.add_argument('--weeks', required=True)
+    s.add_argument('--model', choices=list(FORECAST_MODELS), default=QB_LINKED,
+                   help='forecast model for each week (forecasts are cached under <out-dir>/forecasts)')
     s.add_argument('--mock-draft', type=Path, help='mock-draft CSV (else a synthetic trailing-mean draft)')
     s.add_argument('--n-teams', type=int, default=10)
     s.add_argument('--beta', type=float, default=0.90)

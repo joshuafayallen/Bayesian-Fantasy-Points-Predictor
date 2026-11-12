@@ -1,0 +1,194 @@
+15:52:18 INFO ffpred.data: dropped 6 duplicate (player_id, season, week) rows
+15:54:33 INFO ffpred.model: het_gp_vegas: fit 9394 rows / 677 players in 134s (divergences=0, max r_hat=1.010, min ess_bulk=524)
+15:54:35 INFO ffpred.forecast: het_gp_vegas: scored 251 rows, skipped 13
+15:54:58 INFO ffpred.model: het_gp_qb_vegas: fit 1344 rows / 103 players in 23s (divergences=0, max r_hat=1.010, min ess_bulk=538)
+15:55:00 INFO ffpred.forecast: het_gp_qb_vegas: scored 34 rows, skipped 0
+15:55:02 INFO ffpred.league: 2023 wk2: 15 matchup-rule rows -> results/league/synthetic/league__2023__wk02.json
+15:57:33 INFO ffpred.model: het_gp_vegas: fit 9658 rows / 690 players in 151s (divergences=0, max r_hat=1.020, min ess_bulk=279)
+15:57:35 INFO ffpred.forecast: het_gp_vegas: scored 252 rows, skipped 9
+15:57:56 INFO ffpred.model: het_gp_qb_vegas: fit 1378 rows / 103 players in 21s (divergences=0, max r_hat=1.010, min ess_bulk=597)
+15:57:58 INFO ffpred.forecast: het_gp_qb_vegas: scored 39 rows, skipped 0
+15:57:59 INFO ffpred.league: skip Team3 vs Team4 2023 wk3: not enough RB in pool: need 2, have 1
+15:57:59 INFO ffpred.league: 2023 wk3: 12 matchup-rule rows -> results/league/synthetic/league__2023__wk03.json
+16:00:32 INFO ffpred.model: het_gp_vegas: fit 9919 rows / 699 players in 152s (divergences=0, max r_hat=1.000, min ess_bulk=649)
+16:00:33 INFO ffpred.forecast: het_gp_vegas: scored 265 rows, skipped 8
+16:00:50 INFO ffpred.model: het_gp_qb_vegas: fit 1417 rows / 103 players in 17s (divergences=0, max r_hat=1.010, min ess_bulk=332)
+16:00:51 INFO ffpred.forecast: het_gp_qb_vegas: scored 38 rows, skipped 2
+16:00:53 INFO ffpred.league: 2023 wk4: 15 matchup-rule rows -> results/league/synthetic/league__2023__wk04.json
+16:03:23 INFO ffpred.model: het_gp_vegas: fit 10192 rows / 707 players in 150s (divergences=0, max r_hat=1.020, min ess_bulk=307)
+16:03:24 INFO ffpred.forecast: het_gp_vegas: scored 241 rows, skipped 3
+16:03:49 INFO ffpred.model: het_gp_qb_vegas: fit 1457 rows / 105 players in 24s (divergences=0, max r_hat=1.010, min ess_bulk=368)
+16:03:50 INFO ffpred.forecast: het_gp_qb_vegas: scored 36 rows, skipped 0
+16:03:51 INFO ffpred.league: skip Team9 vs Team3 2023 wk5: not enough TE in pool: need 1, have 0
+16:03:51 INFO ffpred.league: skip Team10 vs Team2 2023 wk5: not enough RB in pool: need 2, have 1
+16:03:51 INFO ffpred.league: 2023 wk5: 9 matchup-rule rows -> results/league/synthetic/league__2023__wk05.json
+16:06:38 INFO ffpred.model: het_gp_vegas: fit 10436 rows / 710 players in 166s (divergences=0, max r_hat=1.000, min ess_bulk=806)
+16:06:40 INFO ffpred.forecast: het_gp_vegas: scored 249 rows, skipped 3
+16:07:04 INFO ffpred.model: het_gp_qb_vegas: fit 1493 rows / 105 players in 24s (divergences=0, max r_hat=1.010, min ess_bulk=326)
+16:07:06 INFO ffpred.forecast: het_gp_qb_vegas: scored 34 rows, skipped 1
+16:07:07 INFO ffpred.league: skip Team7 vs Team3 2023 wk6: not enough FLEX-eligible players left after filling fixed slots: need 1 from ('RB', 'WR', 'TE'), only 0 would remain after the fixed roster slots are filled. (Typically a thin bench running out of RB/WR/TE depth this week -- byes/injuries ate the pool.)
+16:07:07 INFO ffpred.league: skip Team9 vs Team10 2023 wk6: not enough RB in pool: need 2, have 1
+16:07:07 INFO ffpred.league: 2023 wk6: 9 matchup-rule rows -> results/league/synthetic/league__2023__wk06.json
+16:10:00 INFO ffpred.model: het_gp_vegas: fit 10688 rows / 713 players in 173s (divergences=0, max r_hat=1.000, min ess_bulk=836)
+16:10:02 INFO ffpred.forecast: het_gp_vegas: scored 212 rows, skipped 3
+16:10:27 INFO ffpred.model: het_gp_qb_vegas: fit 1528 rows / 106 players in 25s (divergences=0, max r_hat=1.010, min ess_bulk=319)
+16:10:29 INFO ffpred.forecast: het_gp_qb_vegas: scored 30 rows, skipped 1
+16:10:29 INFO ffpred.league: skip Team1 vs Team4 2023 wk7: not enough QB in pool: need 1, have 0
+16:10:29 INFO ffpred.league: skip Team5 vs Team3 2023 wk7: not enough FLEX-eligible players left after filling fixed slots: need 1 from ('RB', 'WR', 'TE'), only 0 would remain after the fixed roster slots are filled. (Typically a thin bench running out of RB/WR/TE depth this week -- byes/injuries ate the pool.)
+16:10:30 INFO ffpred.league: skip Team7 vs Team10 2023 wk7: not enough RB in pool: need 2, have 1
+16:10:30 INFO ffpred.league: skip Team8 vs Team9 2023 wk7: not enough RB in pool: need 2, have 1
+16:10:30 INFO ffpred.league: 2023 wk7: 3 matchup-rule rows -> results/league/synthetic/league__2023__wk07.json
+16:13:01 INFO ffpred.model: het_gp_vegas: fit 10903 rows / 716 players in 152s (divergences=0, max r_hat=1.000, min ess_bulk=720)
+16:13:03 INFO ffpred.forecast: het_gp_vegas: scored 264 rows, skipped 1
+16:13:20 INFO ffpred.model: het_gp_qb_vegas: fit 1559 rows / 107 players in 17s (divergences=0, max r_hat=1.010, min ess_bulk=428)
+16:13:21 INFO ffpred.forecast: het_gp_qb_vegas: scored 36 rows, skipped 3
+16:13:21 INFO ffpred.league: skip Team1 vs Team3 2023 wk8: not enough TE in pool: need 1, have 0
+16:13:21 INFO ffpred.league: skip Team5 vs Team10 2023 wk8: not enough TE in pool: need 1, have 0
+16:13:21 INFO ffpred.league: skip Team6 vs Team9 2023 wk8: not enough RB in pool: need 2, have 1
+16:13:22 INFO ffpred.league: 2023 wk8: 6 matchup-rule rows -> results/league/synthetic/league__2023__wk08.json
+16:16:22 INFO ffpred.model: het_gp_vegas: fit 11168 rows / 717 players in 180s (divergences=0, max r_hat=1.010, min ess_bulk=753)
+16:16:24 INFO ffpred.forecast: het_gp_vegas: scored 242 rows, skipped 0
+16:16:49 INFO ffpred.model: het_gp_qb_vegas: fit 1598 rows / 110 players in 25s (divergences=0, max r_hat=1.010, min ess_bulk=390)
+16:16:51 INFO ffpred.forecast: het_gp_qb_vegas: scored 31 rows, skipped 0
+16:16:51 INFO ffpred.league: skip Team3 vs Team10 2023 wk9: not enough RB in pool: need 2, have 1
+16:16:51 INFO ffpred.league: skip Team4 vs Team9 2023 wk9: not enough RB in pool: need 2, have 1
+16:16:51 INFO ffpred.league: skip Team5 vs Team8 2023 wk9: not enough QB in pool: need 1, have 0
+16:16:51 INFO ffpred.league: skip Team6 vs Team7 2023 wk9: not enough QB in pool: need 1, have 0
+16:16:51 INFO ffpred.league: 2023 wk9: 3 matchup-rule rows -> results/league/synthetic/league__2023__wk09.json
+16:19:22 INFO ffpred.model: het_gp_vegas: fit 9388 rows / 632 players in 151s (divergences=0, max r_hat=1.000, min ess_bulk=532)
+16:19:24 INFO ffpred.forecast: het_gp_vegas: scored 238 rows, skipped 15
+16:19:46 INFO ffpred.model: het_gp_qb_vegas: fit 1347 rows / 106 players in 21s (divergences=0, max r_hat=1.010, min ess_bulk=498)
+16:19:47 INFO ffpred.forecast: het_gp_qb_vegas: scored 38 rows, skipped 0
+16:19:48 INFO ffpred.league: skip Team3 vs Team6 2024 wk2: not enough TE in pool: need 1, have 0
+16:19:49 INFO ffpred.league: 2024 wk2: 12 matchup-rule rows -> results/league/synthetic/league__2024__wk02.json
+16:22:27 INFO ffpred.model: het_gp_vegas: fit 9641 rows / 647 players in 158s (divergences=0, max r_hat=1.010, min ess_bulk=451)
+16:22:29 INFO ffpred.forecast: het_gp_vegas: scored 256 rows, skipped 5
+16:22:52 INFO ffpred.model: het_gp_qb_vegas: fit 1385 rows / 106 players in 23s (divergences=0, max r_hat=1.010, min ess_bulk=375)
+16:22:54 INFO ffpred.forecast: het_gp_qb_vegas: scored 38 rows, skipped 1
+16:22:55 INFO ffpred.league: skip Team10 vs Team6 2024 wk3: not enough TE in pool: need 1, have 0
+16:22:55 INFO ffpred.league: 2024 wk3: 12 matchup-rule rows -> results/league/synthetic/league__2024__wk03.json
+16:25:09 INFO ffpred.model: het_gp_vegas: fit 9902 rows / 652 players in 133s (divergences=0, max r_hat=1.000, min ess_bulk=1066)
+16:25:10 INFO ffpred.forecast: het_gp_vegas: scored 238 rows, skipped 6
+16:25:26 INFO ffpred.model: het_gp_qb_vegas: fit 1424 rows / 107 players in 16s (divergences=0, max r_hat=1.010, min ess_bulk=403)
+16:25:27 INFO ffpred.forecast: het_gp_qb_vegas: scored 37 rows, skipped 0
+16:25:28 INFO ffpred.league: skip Team8 vs Team6 2024 wk4: not enough TE in pool: need 1, have 0
+16:25:28 INFO ffpred.league: skip Team2 vs Team3 2024 wk4: not enough TE in pool: need 1, have 0
+16:25:28 INFO ffpred.league: 2024 wk4: 9 matchup-rule rows -> results/league/synthetic/league__2024__wk04.json
+16:27:59 INFO ffpred.model: het_gp_vegas: fit 10146 rows / 658 players in 151s (divergences=0, max r_hat=1.000, min ess_bulk=836)
+16:28:01 INFO ffpred.forecast: het_gp_vegas: scored 213 rows, skipped 4
+16:28:26 INFO ffpred.model: het_gp_qb_vegas: fit 1461 rows / 107 players in 25s (divergences=0, max r_hat=1.010, min ess_bulk=563)
+16:28:28 INFO ffpred.forecast: het_gp_qb_vegas: scored 35 rows, skipped 0
+16:28:28 INFO ffpred.league: skip Team1 vs Team6 2024 wk5: not enough TE in pool: need 1, have 0
+16:28:28 INFO ffpred.league: skip Team8 vs Team4 2024 wk5: not enough WR in pool: need 2, have 1
+16:28:29 INFO ffpred.league: skip Team10 vs Team2 2024 wk5: not enough QB in pool: need 1, have 0
+16:28:29 INFO ffpred.league: 2024 wk5: 6 matchup-rule rows -> results/league/synthetic/league__2024__wk05.json
+16:31:11 INFO ffpred.model: het_gp_vegas: fit 10363 rows / 662 players in 162s (divergences=0, max r_hat=1.000, min ess_bulk=640)
+16:31:12 INFO ffpred.forecast: het_gp_vegas: scored 222 rows, skipped 8
+16:31:36 INFO ffpred.model: het_gp_qb_vegas: fit 1496 rows / 107 players in 23s (divergences=0, max r_hat=1.010, min ess_bulk=360)
+16:31:38 INFO ffpred.forecast: het_gp_qb_vegas: scored 30 rows, skipped 2
+16:31:38 INFO ffpred.league: skip Team1 vs Team5 2024 wk6: not enough RB in pool: need 2, have 1
+16:31:39 INFO ffpred.league: 2024 wk6: 12 matchup-rule rows -> results/league/synthetic/league__2024__wk06.json
+16:34:23 INFO ffpred.model: het_gp_vegas: fit 10593 rows / 670 players in 164s (divergences=0, max r_hat=1.000, min ess_bulk=851)
+16:34:25 INFO ffpred.forecast: het_gp_vegas: scored 247 rows, skipped 6
+16:34:49 INFO ffpred.model: het_gp_qb_vegas: fit 1528 rows / 109 players in 24s (divergences=0, max r_hat=1.010, min ess_bulk=405)
+16:34:51 INFO ffpred.forecast: het_gp_qb_vegas: scored 39 rows, skipped 1
+16:34:51 INFO ffpred.league: skip Team5 vs Team3 2024 wk7: not enough TE in pool: need 1, have 0
+16:34:51 INFO ffpred.league: skip Team7 vs Team10 2024 wk7: not enough TE in pool: need 1, have 0
+16:34:52 INFO ffpred.league: 2024 wk7: 9 matchup-rule rows -> results/league/synthetic/league__2024__wk07.json
+16:37:35 INFO ffpred.model: het_gp_vegas: fit 10846 rows / 676 players in 163s (divergences=0, max r_hat=1.000, min ess_bulk=889)
+16:37:36 INFO ffpred.forecast: het_gp_vegas: scored 270 rows, skipped 1
+16:37:54 INFO ffpred.model: het_gp_qb_vegas: fit 1568 rows / 110 players in 18s (divergences=0, max r_hat=1.010, min ess_bulk=488)
+16:37:55 INFO ffpred.forecast: het_gp_qb_vegas: scored 37 rows, skipped 0
+16:37:57 INFO ffpred.league: 2024 wk8: 15 matchup-rule rows -> results/league/synthetic/league__2024__wk08.json
+16:40:41 INFO ffpred.model: het_gp_vegas: fit 11117 rows / 677 players in 164s (divergences=0, max r_hat=1.000, min ess_bulk=1088)
+16:40:42 INFO ffpred.forecast: het_gp_vegas: scored 251 rows, skipped 5
+16:40:59 INFO ffpred.model: het_gp_qb_vegas: fit 1605 rows / 110 players in 17s (divergences=0, max r_hat=1.010, min ess_bulk=486)
+16:41:00 INFO ffpred.forecast: het_gp_qb_vegas: scored 34 rows, skipped 0
+16:41:00 INFO ffpred.league: skip Team3 vs Team10 2024 wk9: not enough TE in pool: need 1, have 0
+16:41:00 INFO ffpred.league: skip Team5 vs Team8 2024 wk9: not enough TE in pool: need 1, have 0
+16:41:01 INFO ffpred.league: 2024 wk9: 9 matchup-rule rows -> results/league/synthetic/league__2024__wk09.json
+16:43:32 INFO ffpred.model: het_gp_vegas: fit 9385 rows / 638 players in 151s (divergences=0, max r_hat=1.010, min ess_bulk=662)
+16:43:34 INFO ffpred.forecast: het_gp_vegas: scored 243 rows, skipped 8
+16:43:56 INFO ffpred.model: het_gp_qb_vegas: fit 1360 rows / 99 players in 22s (divergences=0, max r_hat=1.010, min ess_bulk=343)
+16:43:57 INFO ffpred.forecast: het_gp_qb_vegas: scored 38 rows, skipped 2
+16:43:59 INFO ffpred.league: skip Team3 vs Team6 2025 wk2: not enough TE in pool: need 1, have 0
+16:44:00 INFO ffpred.league: 2025 wk2: 12 matchup-rule rows -> results/league/synthetic/league__2025__wk02.json
+16:46:30 INFO ffpred.model: het_gp_vegas: fit 9636 rows / 646 players in 150s (divergences=0, max r_hat=1.010, min ess_bulk=613)
+16:46:32 INFO ffpred.forecast: het_gp_vegas: scored 250 rows, skipped 5
+16:46:53 INFO ffpred.model: het_gp_qb_vegas: fit 1400 rows / 101 players in 21s (divergences=0, max r_hat=1.020, min ess_bulk=482)
+16:46:55 INFO ffpred.forecast: het_gp_qb_vegas: scored 38 rows, skipped 2
+16:46:55 INFO ffpred.league: skip Team10 vs Team6 2025 wk3: not enough TE in pool: need 1, have 0
+16:46:56 INFO ffpred.league: 2025 wk3: 12 matchup-rule rows -> results/league/synthetic/league__2025__wk03.json
+16:49:14 INFO ffpred.model: het_gp_vegas: fit 9891 rows / 651 players in 137s (divergences=0, max r_hat=1.000, min ess_bulk=592)
+16:49:15 INFO ffpred.forecast: het_gp_vegas: scored 257 rows, skipped 1
+16:49:29 INFO ffpred.model: het_gp_qb_vegas: fit 1440 rows / 103 players in 14s (divergences=0, max r_hat=1.010, min ess_bulk=389)
+16:49:30 INFO ffpred.forecast: het_gp_qb_vegas: scored 38 rows, skipped 0
+16:49:31 INFO ffpred.league: skip Team2 vs Team3 2025 wk4: not enough TE in pool: need 1, have 0
+16:49:31 INFO ffpred.league: 2025 wk4: 12 matchup-rule rows -> results/league/synthetic/league__2025__wk04.json
+16:52:06 INFO ffpred.model: het_gp_vegas: fit 10149 rows / 652 players in 154s (divergences=0, max r_hat=1.000, min ess_bulk=837)
+16:52:08 INFO ffpred.forecast: het_gp_vegas: scored 227 rows, skipped 5
+16:52:31 INFO ffpred.model: het_gp_qb_vegas: fit 1478 rows / 103 players in 23s (divergences=0, max r_hat=1.010, min ess_bulk=405)
+16:52:33 INFO ffpred.forecast: het_gp_qb_vegas: scored 35 rows, skipped 0
+16:52:33 INFO ffpred.league: skip Team1 vs Team6 2025 wk5: not enough QB in pool: need 1, have 0
+16:52:33 INFO ffpred.league: skip Team7 vs Team5 2025 wk5: not enough QB in pool: need 1, have 0
+16:52:33 INFO ffpred.league: skip Team10 vs Team2 2025 wk5: not enough TE in pool: need 1, have 0
+16:52:33 INFO ffpred.league: 2025 wk5: 6 matchup-rule rows -> results/league/synthetic/league__2025__wk05.json
+16:55:07 INFO ffpred.model: het_gp_vegas: fit 10381 rows / 657 players in 153s (divergences=0, max r_hat=1.000, min ess_bulk=819)
+16:55:08 INFO ffpred.forecast: het_gp_vegas: scored 233 rows, skipped 2
+16:55:25 INFO ffpred.model: het_gp_qb_vegas: fit 1513 rows / 103 players in 17s (divergences=0, max r_hat=1.010, min ess_bulk=367)
+16:55:26 INFO ffpred.forecast: het_gp_qb_vegas: scored 34 rows, skipped 0
+16:55:26 INFO ffpred.league: skip Team1 vs Team5 2025 wk6: not enough QB in pool: need 1, have 0
+16:55:27 INFO ffpred.league: skip Team9 vs Team10 2025 wk6: not enough QB in pool: need 1, have 0
+16:55:27 INFO ffpred.league: 2025 wk6: 9 matchup-rule rows -> results/league/synthetic/league__2025__wk06.json
+16:57:51 INFO ffpred.model: het_gp_vegas: fit 10616 rows / 659 players in 144s (divergences=0, max r_hat=1.000, min ess_bulk=662)
+16:57:54 INFO ffpred.forecast: het_gp_vegas: scored 246 rows, skipped 1
+16:58:17 INFO ffpred.model: het_gp_qb_vegas: fit 1547 rows / 103 players in 23s (divergences=0, max r_hat=1.010, min ess_bulk=549)
+16:58:19 INFO ffpred.forecast: het_gp_qb_vegas: scored 39 rows, skipped 1
+16:58:19 INFO ffpred.league: skip Team1 vs Team4 2025 wk7: not enough TE in pool: need 1, have 0
+16:58:19 INFO ffpred.league: skip Team5 vs Team3 2025 wk7: not enough QB in pool: need 1, have 0
+16:58:19 INFO ffpred.league: skip Team6 vs Team2 2025 wk7: not enough WR in pool: need 2, have 1
+16:58:19 INFO ffpred.league: skip Team8 vs Team9 2025 wk7: not enough RB in pool: need 2, have 1
+16:58:19 INFO ffpred.league: 2025 wk7: 3 matchup-rule rows -> results/league/synthetic/league__2025__wk07.json
+17:00:45 INFO ffpred.model: het_gp_vegas: fit 10863 rows / 660 players in 145s (divergences=0, max r_hat=1.010, min ess_bulk=674)
+17:00:46 INFO ffpred.forecast: het_gp_vegas: scored 213 rows, skipped 7
+17:01:01 INFO ffpred.model: het_gp_qb_vegas: fit 1587 rows / 104 players in 15s (divergences=0, max r_hat=1.010, min ess_bulk=412)
+17:01:02 INFO ffpred.forecast: het_gp_qb_vegas: scored 34 rows, skipped 1
+17:01:02 INFO ffpred.league: skip Team1 vs Team3 2025 wk8: not enough QB in pool: need 1, have 0
+17:01:02 INFO ffpred.league: skip Team5 vs Team10 2025 wk8: not enough QB in pool: need 1, have 0
+17:01:02 INFO ffpred.league: skip Team6 vs Team9 2025 wk8: not enough WR in pool: need 2, have 1
+17:01:02 INFO ffpred.league: skip Team7 vs Team8 2025 wk8: not enough FLEX-eligible players left after filling fixed slots: need 1 from ('RB', 'WR', 'TE'), only 0 would remain after the fixed roster slots are filled. (Typically a thin bench running out of RB/WR/TE depth this week -- byes/injuries ate the pool.)
+17:01:02 INFO ffpred.league: 2025 wk8: 3 matchup-rule rows -> results/league/synthetic/league__2025__wk08.json
+17:03:23 INFO ffpred.model: het_gp_vegas: fit 11083 rows / 667 players in 140s (divergences=0, max r_hat=1.010, min ess_bulk=604)
+17:03:24 INFO ffpred.forecast: het_gp_vegas: scored 225 rows, skipped 4
+17:03:42 INFO ffpred.model: het_gp_qb_vegas: fit 1622 rows / 105 players in 18s (divergences=0, max r_hat=1.010, min ess_bulk=382)
+17:03:43 INFO ffpred.forecast: het_gp_qb_vegas: scored 31 rows, skipped 1
+17:03:43 INFO ffpred.league: skip Team1 vs Team2 2025 wk9: not enough RB in pool: need 2, have 1
+17:03:43 INFO ffpred.league: skip Team3 vs Team10 2025 wk9: not enough RB in pool: need 2, have 0
+17:03:43 INFO ffpred.league: skip Team4 vs Team9 2025 wk9: not enough QB in pool: need 1, have 0
+17:03:43 INFO ffpred.league: skip Team5 vs Team8 2025 wk9: not enough QB in pool: need 1, have 0
+17:03:43 INFO ffpred.league: skip Team6 vs Team7 2025 wk9: not enough TE in pool: need 1, have 0
+17:03:43 INFO ffpred.league: 2025 wk9: 0 matchup-rule rows -> results/league/synthetic/league__2025__wk09.json
+shape: (3, 12)
+┌────────────────────┬──────────┬───────┬───────────────────┬───────────────┬─────────┬──────┬───────────┬─────────────┬─────────────────┬─────────────┬───────────────┐
+│ rule               ┆ matchups ┆ weeks ┆ win_rate_baseline ┆ win_rate_rule ┆ rescued ┆ cost ┆ mcnemar_p ┆ same_lineup ┆ regret_baseline ┆ regret_rule ┆ near_tie_rule │
+│ ---                ┆ ---      ┆ ---   ┆ ---               ┆ ---           ┆ ---     ┆ ---  ┆ ---       ┆ ---         ┆ ---             ┆ ---         ┆ ---           │
+│ str                ┆ i64      ┆ i64   ┆ f64               ┆ f64           ┆ i64     ┆ i64  ┆ f64       ┆ f64         ┆ f64             ┆ f64         ┆ f64           │
+╞════════════════════╪══════════╪═══════╪═══════════════════╪═══════════════╪═════════╪══════╪═══════════╪═════════════╪═════════════════╪═════════════╪═══════════════╡
+│ chance_constrained ┆ 71       ┆ 23    ┆ 0.465             ┆ 0.465         ┆ 0       ┆ 0    ┆ NaN       ┆ 1.000       ┆ 9.798           ┆ 9.798       ┆ 0.408         │
+│ cvar_averse        ┆ 71       ┆ 23    ┆ 0.465             ┆ 0.465         ┆ 0       ┆ 0    ┆ NaN       ┆ 0.972       ┆ 9.798           ┆ 9.833       ┆ 0.310         │
+│ head_to_head       ┆ 71       ┆ 23    ┆ 0.465             ┆ 0.465         ┆ 0       ┆ 0    ┆ NaN       ┆ 0.972       ┆ 9.798           ┆ 9.757       ┆ 0.465         │
+└────────────────────┴──────────┴───────┴───────────────────┴───────────────┴─────────┴──────┴───────────┴─────────────┴─────────────────┴─────────────┴───────────────┘
+--- calibration of predicted P(win), baseline lineups
+shape: (5, 4)
+┌────────┬────────────────┬────────────────┬─────┐
+│ bucket ┆ mean_predicted ┆ empirical_rate ┆ n   │
+│ ---    ┆ ---            ┆ ---            ┆ --- │
+│ u32    ┆ f64            ┆ f64            ┆ u32 │
+╞════════╪════════════════╪════════════════╪═════╡
+│ 0      ┆ 0.290          ┆ 0.333          ┆ 15  │
+│ 1      ┆ 0.421          ┆ 0.357          ┆ 14  │
+│ 2      ┆ 0.507          ┆ 0.571          ┆ 14  │
+│ 3      ┆ 0.598          ┆ 0.500          ┆ 14  │
+│ 4      ┆ 0.693          ┆ 0.571          ┆ 14  │
+└────────┴────────────────┴────────────────┴─────┘
+--- chance_constrained: promised p_clear 0.900, realized clear rate 0.873, feasible 100.0%

@@ -11,9 +11,24 @@ So who should have this person started going into the game? Since we were little
 
 ## Quick start
 
-You need Python 3.14, [`uv`](https://docs.astral.sh/uv/) and a network connection (all data comes from [nflverse](https://github.com/nflverse)). From the project root:
+You need Python 3.14, [`uv`](https://docs.astral.sh/uv/) and a network connection (all data comes from [nflverse](https://github.com/nflverse)). 
+
+
+To install `uv`
+
+```bash 
+# Mac 
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+From the project root:
 
 ```bash
+git clone https://github.com/joshuafayallen/Bayesian-Fantasy-Points-Predictor.git
+cd cd Bayesian-Fantasy-Points-Predictor
 uv sync                                       # install dependencies
 uv run python src/ff.py build-data            # NFL data through last week (~30 s)
 uv run python src/ff.py build-team-form       # team-strength model (a few minutes)
@@ -164,6 +179,9 @@ uv run python src/ff.py decide forecasts/2026_wk05 --roster my_roster.txt --rule
 ```
 
 `decide` also reports the runner-up lineup and flags a **near tie** when the gap between them is within simulation noise, so a coin-flip start/sit call doesn't look like a confident one. `src/README.md` has the details: every command, the backtest and league-simulation tools, and what changed from the research code.
+
+
+For a friendlier UX I reccomend using the `fantasy_decisions.py` script. This is just a marimo
 
 ## Testing
 

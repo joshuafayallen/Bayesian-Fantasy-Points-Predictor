@@ -25,6 +25,106 @@ preconceptions about players or matchups heading into the game, what if
 we could incorporate the uncertainty in our forecasts and a set of the
 worst case decisions to make more informed roster decisions?
 
+## Quick start
+
+You need Python 3.14, [`uv`](https://docs.astral.sh/uv/) and a network
+connection (all data comes from
+[nflverse](https://github.com/nflverse)).
+
+To install `uv`
+
+``` bash
+# Mac 
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+From the project root:
+
+``` bash
+git clone https://github.com/joshuafayallen/Bayesian-Fantasy-Points-Predictor.git
+cd cd Bayesian-Fantasy-Points-Predictor
+uv sync                                       # install dependencies
+uv run python src/ff.py build-data            # NFL data through last week (~30 s)
+uv run python src/ff.py build-team-form       # team-strength model (a few minutes)
+uv run marimo run fantasy_decisions.py        # open the app in your browser
+```
+
+In the app:
+
+1.  Pick the **season and week** you’re setting a lineup for.
+2.  Enter **your roster**, and optionally your opponent’s: search by
+    name, filter by position or team, or paste names / Sleeper / ESPN /
+    Yahoo ids. Set your league’s roster size; the app refuses a roster
+    that’s too big, a player on both rosters, or one that can’t fill a
+    lineup, and lists anyone who can’t start this week.
+3.  Open **Build a forecast for this week** and click Build. *Fast*
+    takes a few minutes; *Full* is the production fit (see [Time and
+    hardware](#time-and-hardware)).
+4.  Choose a **decision rule** and read the recommended lineup, the
+    runner-up, and whether the call is a near tie.
+5.  Optionally swap players yourself and see how your lineup compares
+    with the recommendation, then save it.
+
+Your rosters are remembered in `rosters/` and saved lineups in
+`lineups/`.
+
+## What it predicts
+
+- **Points:** `total_fantasy_points` from nflverse’s `ff_opportunity`
+  data (PPR scoring).
+- **Lineup:** QB, 2 RB, 2 WR, TE and 1 FLEX (RB/WR/TE). No kickers or
+  defenses. Other formats: change `ROSTER` and `N_FLEX` in
+  `src/ffpred/config.py`.
+- **Who gets a forecast:** players on an active NFL roster that week
+  (nflverse rosters) **with at least one game in your data**. Rookies
+  appear after their first game once you rebuild the data; inactive
+  players and teams on bye are left out.
+- **Joint draws:** each forecast is 4,000 simulated weeks for every
+  player at once, so lineup totals, floors and head-to-head odds include
+  the way a QB and his receivers rise and fall together.
+
+## Every week
+
+Rebuild the data **before** forecasting. A forecast only knows the games
+in `processed-data/`, so stale data quietly gives stale projections
+(last season’s form, no rookies).
+
+``` bash
+uv run python src/ff.py build-data && uv run python src/ff.py build-team-form
+```
+
+Then build the new week in the app, or from the command line.
+
+### Command line
+
+Everything the app does is also available from one entry point:
+
+``` bash
+# forecast the coming week -> forecasts/2026_wk10/
+uv run python src/ff.py forecast 2026 10
+uv run python src/ff.py forecast 2026 10 --draws 250 --tune 250 --chains 2     # quicker fit
+
+# choose a lineup: roster = a .txt (one id or name per line), a .csv with player_id or player, or a comma list
+uv run python src/ff.py decide forecasts/2026_wk10 --roster rosters/my_roster.txt --rule maximize_expected
+uv run python src/ff.py decide forecasts/2026_wk10 --roster rosters/my_roster.txt --rule cvar_averse --opponent rosters/opponent.txt
+uv run python src/ff.py decide forecasts/2026_wk10 --roster rosters/my_roster.txt --rule head_to_head --opponent rosters/opponent.txt
+
+# every week of a season in one go (skips weeks already saved; replays played weeks + the upcoming one)
+uv run python src/forecast_season.py
+uv run python src/forecast_season.py --speed fast --no-next       # history only, quick fits
+```
+
+`decide` lists players on your roster who aren’t in the forecast, prints
+the lineup with each player’s projection, floor and ceiling, and reports
+the runner-up; when the gap is within simulation noise it prints **NEAR
+TIE** and the interchangeable players. `uv run python src/ff.py --help`
+lists every command; `src/README.md` has the details.
+
+## Background
+
 Throughout the last four years of playing fantasy football, I have found
 myself wanting a bit more from the predictions that my platform produces
 every week. Part of it is that it only produces a single point estimate
@@ -67,6 +167,7 @@ uv run python src/ff.py build-team-form
 # 3. fit both models and forecast the coming week -> forecasts/2026_wk05/
 uv run python src/ff.py forecast 2026 5
 # 4. choose a lineup
+# your roster can also we a csv file
 uv run python src/ff.py decide forecasts/2026_wk05 --roster my_roster.txt --rule maximize_expected
 uv run python src/ff.py decide forecasts/2026_wk05 --roster my_roster.txt --rule cvar_averse --lam 2
 uv run python src/ff.py decide forecasts/2026_wk05 --roster my_roster.txt --rule head_to_head --opponent their_roster.csv
@@ -77,6 +178,9 @@ the gap between them is within simulation noise, so a coin-flip
 start/sit call doesn’t look like a confident one. `src/README.md` has
 the details: every command, the backtest and league-simulation tools,
 and what changed from the research code.
+
+For a friendlier UX I reccomend using the `fantasy_decisions.py` script.
+This is just a marimo
 
 ## Testing
 
@@ -207,7 +311,10 @@ expected score for a week is built from:
 
 For RB/WR/TE the noise is heteroskedastic: each position has its own
 baseline spread, and a second Gaussian process lets the spread change
-over a career. The QB model uses a single noise scale.
+over a career. The QB model uses a single noise scale. The inspiration
+for this idea came from [the Heteroskedastic Gaussian Process example
+from
+PyMC](https://www.pymc.io/projects/examples/en/latest/gaussian_processes/GP-Heteroskedastic.html).
 
 Fits use NUTS (via nutpie) with 4 chains of 1,000 draws after 1,000
 tuning steps. The skill-position model takes about 3 minutes per fold
@@ -239,14 +346,12 @@ model](https://www.pymc-labs.com/blog-posts/forecasting-the-2026-world-cup-group
 
 Stacking, R2D2 shrinkage priors and BART were also tried. The current
 models came out of those experiments: the aging curve and per-player
-season GP replaced the random walk and season intercepts. Two ablations
-settled the inputs: the player’s side of the Vegas line and the implied
-team total beat the raw home-perspective spread, and richer team-model
-context added nothing once they were in; advanced NGS/QBR stats added
-nothing out of sample once a data leak in how they were joined was
-removed.
-
-## Results
+season GP replaced the random walk and season intercepts. After
+rethinking what the latent qualities of the model are I decided
+experimented and found that the Heteroskedastic GP tapped those latent
+quantities better. I found, through ablation testing, that the GP model
+with implied team totals and player side Vegas lines outperformed prior
+iterations of the model and was significantly faster. \## Results
 
 Each fold fits on the three seasons before the target week and forecasts
 that week’s players; the baseline is each player’s past average.
@@ -257,12 +362,14 @@ that week’s players; the baseline is each player’s past average.
 | Skill Model | 6.02 | 6.33 | 4.86 | 3.25 | 2.82 |
 
 The models beat the past-average baseline by 4.86 for skill positions
-and 6.7 for QBs. That is a modest gain in point accuracy, but the
-decision engine needs more than an accurate mean: a chance-constrained
-call that rests on a player clearing a threshold x% of the time is
-meaningless if the intervals are not calibrated. Overall coverage, in
-the plot at the top, is close to nominal. Broken down by how many points
-a player is projected for, it is less even:
+and 6.7 for QBs. This makes some sense if we know that the player is
+LaDanian Tomlinson in 2006 than we have a good idea of how well that
+player is going to play next week. However, the decision engine needs
+more than an accurate mean: a chance-constrained call that rests on a
+player clearing a threshold x% of the time is meaningless if the
+intervals are not calibrated. Overall coverage, in the plot at the top,
+is close to nominal. Broken down by how many points a player is
+projected for, it is less even:
 
     # A tibble: 179 × 12
        model    season  week pos   tier      n mean_expected mean_actual below_p10
@@ -302,19 +409,17 @@ range for high-projection players is too narrow. Letting the spread
 scale with the projection is the main thing in progress; see the to-do
 list.
 
-So how do we use this thing? (The example below was produced with an
-earlier version of the models; the decision rules work the same way.)
-Let’s take the Yahoo Fantasy Expert’s draft from 2025 as an imperfect
-example. We can’t observe the week-to-week add-drops or waiver-wire
-activity, so we can’t account for somebody adding Daniel Jones in the
-first week or two of the season or dropping Mike Evans when it was clear
-that his hamstring injury would prevent him from playing the rest of the
-year. I built a small simulator where we can build a round-robin
-schedule and have the lineups face each other. For demonstration
-purposes, I ran the decision engine on weeks 2-4 since we don’t have to
-worry about bye weeks. I will focus on team 5 in week 2 because this is
-the first week where the decision engine had a different lineup than
-maximizing expected points.
+So how do we use this thing? Let’s take the Yahoo Fantasy Expert’s draft
+from 2025 as an imperfect example. We can’t observe the week-to-week
+add-drops or waiver-wire activity, so we can’t account for somebody
+adding Daniel Jones in the first week or two of the season or dropping
+Mike Evans when it was clear that his hamstring injury would prevent him
+from playing the rest of the year. I built a small simulator where we
+can build a round-robin schedule and have the lineups face each other.
+For demonstration purposes, I ran the decision engine on weeks 2-4 since
+we don’t have to worry about bye weeks. I will focus on team 5 in week 2
+because this is the first week where the decision engine had a different
+lineup than maximizing expected points.
 
 Normally what I would do is just look at the players with the highest
 projected point totals and then maybe adjust who is starting versus who
@@ -346,7 +451,7 @@ tradeoff to make. At lambda=0, this is identical to just starting the
 highest-expected-points player. As lambda grows, the rule increasingly
 favors the player whose bad weeks are smaller in magnitude, even at the
 cost of a lower mean. In a practical sense, all we are doing is setting
-how much average performance am I willing to give up to make sure the
+how much average performance you are willing to give up to make sure the
 floor doesn’t collapse.
 
 ``` r
@@ -435,5 +540,5 @@ installed.
   points, not just forecast scores.
 - [ ] Try out [Alchemize](https://github.com/pymc-labs/alchemize) to
   rebuild the underlying models in Rust to speed up sampling.
-- [ ] Build a friendlier interface to use.
+- \[x \] Build a friendlier interface to use.
 - [ ] Add a scheduler so I don’t have to run this manually every week.

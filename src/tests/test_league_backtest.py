@@ -112,7 +112,8 @@ def test_backtest_and_forecast_end_to_end_advi(tmp_path, league, league_team_for
     assert set(fc.frame['position'].unique()) == {'QB', 'RB', 'WR', 'TE'}
     out = fc.save(tmp_path / 'fc')
     fc2 = WeekForecast.load(out)
-    assert fc2.frame.equals(fc.frame) and np.allclose(fc2.draws, fc.draws, atol=1e-3)
+    # draws are saved in tenths of a point, so a reload is within 0.05 pts of the fit
+    assert fc2.frame.equals(fc.frame) and np.allclose(fc2.draws, fc.draws, atol=0.051)
     assert json.loads((out / 'meta.json').read_text())['fits']['het_gp_vegas']['n_scored'] > 0
 
 

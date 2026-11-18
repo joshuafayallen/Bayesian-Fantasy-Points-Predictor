@@ -37,7 +37,7 @@ import pytensor.tensor as pt
 
 from .config import (DUD_LINE, HET_GP_QB_VEGAS, HURDLE_SKILL, STARTER_COLS_FORECAST, STARTER_COLS_TRAIN,
                      TARGET_COL, SamplerSettings)
-from .model import FittedModel, HetPrep, _diagnostics, fit as fit_het, payload
+from .model import FittedModel, HetPrep, _diagnostics, fit as fit_het, payload, sample_posterior
 
 log = logging.getLogger(__name__)
 
@@ -222,16 +222,6 @@ class FittedSkill:
         return pl.DataFrame(rows)
 
 
-def _sample(model: pm.Model, s: SamplerSettings):
-    with model:
-        if s.method == 'advi':
-            approx = pm.fit(n=s.advi_n, method='advi', random_seed=s.seed, progressbar=False)
-            return approx.sample(s.advi_draws, random_seed=s.seed)
-        return pm.sample(draws=s.draws, tune=s.tune, chains=s.chains, cores=s.chains, random_seed=s.seed,
-                         progressbar=False, target_accept=s.target_accept, nuts_sampler=s.nuts_sampler,
-                         **s.extra)
-
-
 def fit_skill(train_s: pl.DataFrame, train_q: pl.DataFrame, r_q: np.ndarray,
               settings: SamplerSettings = SamplerSettings()) -> FittedSkill:
     """Stage 2. ``train_q`` / ``r_q``: the QB training rows and their residuals
@@ -250,7 +240,7 @@ def fit_skill(train_s: pl.DataFrame, train_q: pl.DataFrame, r_q: np.ndarray,
                      divergences=0, max_rhat=None, min_ess_bulk=None)
     fs.model = build_hurdle_skill(prep.train_arrays, prep, fs.trail(train_s), r, has, m_ref)
     t0 = time.time()
-    fs.idata = _sample(fs.model, settings)
+    fs.idata = sample_posterior(fs.model, settings)
     fs.fit_time = time.time() - t0
     if settings.method == 'nuts':
         fs.divergences = int(fs.idata.sample_stats['diverging'].sum())

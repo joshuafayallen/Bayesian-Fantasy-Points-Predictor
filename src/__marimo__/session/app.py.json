@@ -1,0 +1,198 @@
+{
+  "version": "1",
+  "metadata": {
+    "marimo_version": "0.25.2",
+    "script_metadata_hash": null
+  },
+  "cells": [
+    {
+      "id": "Hbol",
+      "code_hash": "5620f3e17f634e1ee0a1fe2bdf12b38c",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "MJUe",
+      "code_hash": "a1b7fa685f7def7bcce4ba246b5d0c64",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h1 id=\"fantasy-lineup-lab\">Fantasy lineup lab</h1>\n<span class=\"paragraph\">Pick a saved forecast, choose your roster (and your opponent's), pick a\ndecision rule and see the lineup it starts, how its total is distributed,\nand whether the call is a near tie. Forecasts come from\n<code>ff.py forecast</code> (an upcoming or replayed week) or the league runs'\ncached weeks.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "a9051ab5-6615-4e1d-aef7-05964c03325b",
+      "code_hash": null,
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "vblA",
+      "code_hash": "9b72bb0b49dd48003b1d68f479a73da9",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "6bf460a3-503b-49d8-810f-de373de767de",
+      "code_hash": null,
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "bc008dc7-6082-4273-91c8-9c8a0668d1ea",
+      "code_hash": null,
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "e3be5f44-b746-4d68-91ff-1a20f1eb1a5c",
+      "code_hash": null,
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "7772a876-4355-4557-98ea-23f343a7bf4d",
+      "code_hash": null,
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "SFPL",
+      "code_hash": "f727d52dbaa5141ff8874a0466156f5f",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "6bde9b34-9424-462a-afcc-ca9abd1f4c33",
+      "code_hash": null,
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "c24908fe-180d-47f4-a7da-4e44525e46b2",
+      "code_hash": null,
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "2b9594d5-f2c7-43f6-b8ec-a6508730753c",
+      "code_hash": null,
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "be7eb17e-d421-47c6-aa84-5d115045b3fd",
+      "code_hash": null,
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "d14f267d-b540-4b72-9c32-379ba4ad62e4",
+      "code_hash": null,
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "bkHC",
+      "code_hash": "60f4e37d190b9126b1bc40205142a297",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "lEQa",
+      "code_hash": "f17054aa80affbdb0f1e118ca1f2db64",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "PKri",
+      "code_hash": "a6edf855536f940b48ff6512e456a403",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "Xref",
+      "code_hash": "b7e18d70cd83fc97ad20538e21717f38",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "BYtC",
+      "code_hash": "f4fa82a85711a188a9a4ccbb46a6301f",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "RGSE",
+      "code_hash": "6653fe091f9301edd6f2b818cb0a551d",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "Kclp",
+      "code_hash": "9cb7739452783b4a172a7af5603f8715",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "emfo",
+      "code_hash": "ee3619cb150d5cf283b4aa88cb7a2fb5",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "Hstk",
+      "code_hash": "cc1015dd26de42dd565ad58a0f61b5d5",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "nWHF",
+      "code_hash": "217b60f13037575c650597cf895a4b8c",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "iLit",
+      "code_hash": "fee8903e93e4e299353c414ec31fc191",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "ZHCJ",
+      "code_hash": "4346bf4dd44c5a4ba931033b5c902bbf",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "ROlb",
+      "code_hash": "29ed4ebe29e7e65c2633ec2b6f748c46",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "qnkX",
+      "code_hash": "cba3f4dbba132b889922751a5b3d08a2",
+      "outputs": [],
+      "console": []
+    }
+  ]
+}

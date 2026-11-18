@@ -46,18 +46,22 @@ def _int_list(spec: str) -> list[int]:
 
 def _settings(a) -> SamplerSettings:
     return SamplerSettings(method=a.method, nuts_sampler=a.sampler, draws=a.draws, tune=a.tune,
-                           chains=a.chains, advi_n=a.advi_n, advi_draws=a.advi_draws, seed=a.seed)
+                           chains=a.chains, advi_n=a.advi_n, advi_draws=a.advi_draws,
+                           pathfinder_paths=a.pathfinder_paths, pathfinder_draws=a.pathfinder_draws, seed=a.seed)
 
 
 def _add_fit_args(p):
     g = p.add_argument_group('fitting')
-    g.add_argument('--method', choices=['nuts', 'advi'], default='nuts')
+    g.add_argument('--method', choices=['nuts', 'pathfinder', 'advi'], default='nuts',
+                   help='nuts: full MCMC (default); pathfinder: fast approximation; advi: smoke runs only')
     g.add_argument('--sampler', choices=['nutpie', 'pymc'], default='nutpie')
     g.add_argument('--draws', type=int, default=1000)
     g.add_argument('--tune', type=int, default=1000)
     g.add_argument('--chains', type=int, default=4)
     g.add_argument('--advi-n', type=int, default=20_000)
     g.add_argument('--advi-draws', type=int, default=500)
+    g.add_argument('--pathfinder-paths', type=int, default=8)
+    g.add_argument('--pathfinder-draws', type=int, default=1000)
     g.add_argument('--seed', type=int, default=0)
 
 

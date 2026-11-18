@@ -1,0 +1,17 @@
+/* src/app.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --marimo-text-font: 'Inter', system-ui, sans-serif;     /* body text, labels, widgets */
+  --marimo-heading-font: 'Inter', system-ui, sans-serif;
+}
+
+/* Overall size: marimo's UI is sized in rem, so this one number scales text and widgets together */
+html { font-size: 15px; }          /* default is 16px; try 15 for denser, 18 for roomier */
+
+/* Headings: a little tighter and bolder */
+.markdown h1 { font-size: 2rem;   font-weight: 600; letter-spacing: -0.02em; }
+.markdown h2 { font-size: 1.4rem; font-weight: 600; margin-top: 2rem; }
+
+/* Body copy and the muted source line */
+.markdown p  { line-height: 1.55; }

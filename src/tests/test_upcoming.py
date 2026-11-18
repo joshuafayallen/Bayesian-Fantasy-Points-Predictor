@@ -68,3 +68,33 @@ def test_replay_matches_processed_rows_real(season, week):
     assert n >= 0.95 * actual.height                 # misses: debuts / rookies
     # mid-season, only trades / snap-join gaps should differ
     assert max(bad.values()) <= 0.03 * n, bad
+
+
+def test_fetch_rosters_week_options(monkeypatch):
+    import sys
+    import types
+    from ffpred.upcoming import fetch_rosters
+    weekly = pl.DataFrame({'season': [2026] * 5, 'week': [1, 2, 3, 3, 2],
+                           'gsis_id': ['a', 'a', 'a', 'b', None],
+                           'team': ['KC', 'KC', 'BUF', 'DAL', 'NYJ'], 'position': ['WR'] * 5,
+                           'status': ['ACT', 'ACT', 'RES', 'ACT', 'ACT'],
+                           'full_name': ['A A', 'A A', 'A A', 'B B', 'N N'], 'sleeper_id': [1, 1, 1, 2, 3]})
+    fake = types.SimpleNamespace(load_rosters_weekly=lambda seasons: weekly,
+                                 load_rosters=lambda seasons: weekly.drop('week'))
+    monkeypatch.setitem(sys.modules, 'nflreadpy', fake)
+    latest = fetch_rosters(2026).sort('player_id')
+    assert latest.columns == ['player_id', 'team', 'position', 'status', 'player', 'sleeper_id']
+    assert latest['sleeper_id'].to_list() == ['1', '2']
+    latest = latest.select('player_id', 'team', 'position', 'status')
+    assert latest.rows() == [('a', 'BUF', 'WR', 'RES'), ('b', 'DAL', 'WR', 'ACT')]
+    wk2 = fetch_rosters(2026, 2)                                # latest week <= 2 is week 2
+    assert wk2.select('player_id', 'team', 'position', 'status').rows() == [('a', 'KC', 'WR', 'ACT')]
+    every = fetch_rosters(2026, all_weeks=True)
+    assert every.height == 4 and every['week'].to_list() == [1, 2, 3, 3]
+    assert fetch_rosters(2026, 2, all_weeks=True)['week'].to_list() == [1, 2]
+    # weekly feed not published yet -> season roster, one row per player
+    def boom(seasons):
+        raise RuntimeError('not published')
+    monkeypatch.setitem(sys.modules, 'nflreadpy', types.SimpleNamespace(load_rosters_weekly=boom,
+                                                                        load_rosters=lambda seasons: weekly.drop('week')))
+    assert set(fetch_rosters(2026, 11, all_weeks=True)['player_id']) == {'a', 'b'}

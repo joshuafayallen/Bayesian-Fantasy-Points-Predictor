@@ -152,19 +152,46 @@ def build_upcoming_frame(history: pl.DataFrame, schedule: pl.DataFrame, season: 
     return frame
 
 
-def fetch_rosters(season: int, week: float | None = None) -> pl.DataFrame:
-    """(player_id, team, position, status) from nflverse: the weekly roster
-    for ``week`` (latest available week <= it) when published, otherwise
-    the season roster."""
+PLATFORM_IDS = ('sleeper_id', 'espn_id', 'yahoo_id')   # carried through by fetch_rosters
+
+
+def fetch_rosters(season: int, week: float | None = None, *, all_weeks: bool = False) -> pl.DataFrame:
+    """Rosters from nflverse (nflreadpy), one of three shapes:
+
+    fetch_rosters(2026, 11)                    each player's listing for week 11 (the latest
+                                               published week <= 11): what a forecast needs
+    fetch_rosters(2026)                        each player's latest listing this season
+    fetch_rosters(2026, all_weeks=True)        every week's listing (one row per player per
+                                               week, with a ``week`` column); with ``week``,
+    fetch_rosters(2026, 11, all_weeks=True)    only weeks <= 11
+
+    Columns: player_id (GSIS id), team, position, status, player (full name), and the
+    fantasy-platform ids sleeper_id, espn_id, yahoo_id when the feed has them
+    (+ week with all_weeks). Statuses: ACT active, RES reserve/IR, INA inactive,
+    DEV practice squad, CUT released, RET retired.
+    Before the weekly feed is published, falls back to the season roster
+    (no ``week`` column; all_weeks then returns that one listing per player)."""
     import nflreadpy as nfl
+    weekly = True
     try:
         r = nfl.load_rosters_weekly(seasons=[season])
-        if week is not None:
-            r = r.filter(pl.col('week') <= week)
-            r = r.filter(pl.col('week') == r['week'].max())
     except Exception as e:   # weekly feed not published yet
         log.info('weekly rosters unavailable (%s); using season rosters', e)
         r = nfl.load_rosters(seasons=[season])
-    return (r.filter(pl.col('gsis_id').is_not_null())
-            .select(pl.col('gsis_id').alias('player_id'), 'team', 'position', 'status')
-            .unique(subset=['player_id'], keep='last'))
+        weekly = False
+    r = r.filter(pl.col('gsis_id').is_not_null())
+    cols = [pl.col('gsis_id').alias('player_id'), 'team', 'position', 'status',
+            *([pl.col('full_name').alias('player')] if 'full_name' in r.columns else []),
+            *[pl.col(c).cast(pl.Utf8) for c in PLATFORM_IDS if c in r.columns]]
+    if not weekly:
+        return r.select(cols).unique(subset=['player_id'], keep='last', maintain_order=True)
+    if week is not None:
+        r = r.filter(pl.col('week') <= week)
+    r = r.sort('week')
+    if all_weeks:
+        return (r.select(*cols, pl.col('week').cast(pl.Int32))
+                .unique(subset=['player_id', 'week'], keep='last', maintain_order=True)
+                .sort('week', 'team', 'player_id'))
+    if week is not None:
+        r = r.filter(pl.col('week') == r['week'].max())
+    return r.select(cols).unique(subset=['player_id'], keep='last', maintain_order=True)

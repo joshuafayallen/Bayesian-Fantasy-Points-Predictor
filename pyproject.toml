@@ -10,6 +10,7 @@ dependencies = [
     "daft>=0.7.9",
     "ipykernel>=7.2.0",
     "jupyter>=1.1.1",
+    "marimo>=0.25.2",
     "matplotlib==3.11.0",
     "netcdf4>=1.7.4",
     "nflreadpy>=0.1.5",
@@ -30,6 +31,8 @@ dependencies = [
     "statsmodels>=0.14.6",
     "tidydraws>=0.4.3",
     "tqdm>=4.67.3",
+    "vegafusion>=2.0.3",
+    "vl-convert-python>=1.9.0.post1",
     "xpress>=9.9.1",
     "xpresslibs>=9.9.1",
 ]

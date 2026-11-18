@@ -35,6 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import numpy as np
 import polars as pl
 
+from ffpred.forecast import WeekForecast
 from ffpred import data as D, decision_engine as de, league
 from ffpred.config import PATHS, TARGET_COL
 
@@ -57,9 +58,8 @@ def weeks_in(run_dir: Path) -> dict:
     out = {}
     for d in (run_dir / 'forecasts').glob('*_wk*'):
         m = re.fullmatch(r'(\d{4})_wk(\d+)', d.name)
-        if m and (d / 'draws.npy').exists():
-            out[(int(m[1]), int(m[2]))] = lambda d=d: (np.load(d / 'draws.npy').astype('float64'),
-                                                       pl.read_parquet(d / 'frame.parquet'))
+        if m and (d / 'meta.json').exists():           # forecast.nc, or the older draws.npy + frame.parquet
+            out[(int(m[1]), int(m[2]))] = lambda d=d: (lambda fc: (fc.draws, fc.frame))(WeekForecast.load(d))
     for f in run_dir.glob('S_*.npy'):
         m = re.fullmatch(r'S_(\d{4})_(\d+)\.npy', f.name)
         te = run_dir / f'te_{m[1]}_{m[2]}.parquet' if m else None

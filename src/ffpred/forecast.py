@@ -1,6 +1,16 @@
-"""Week-ahead forecasts in the shape the decision engine consumes: a frame
-(one row per player) and a draws matrix (n_draws x n_players) whose columns
-follow the frame's rows.
+"""Week-ahead forecasts. A WeekForecast holds one xarray DataTree, in the layout
+ArviZ / tidydraws expect:
+
+  /predictions                 points (chain, draw, player_id), fantasy points, with
+                               player / position / team / opp_team as coordinates
+  /predictions_constant_data   each player's model inputs that week, by player_id
+  /skipped                     players the models couldn't score, with a reason
+  attrs                        season, week, meta (settings, fit diagnostics) as JSON
+
+``fc.dt`` is the object to work with (``fc.tidy()`` for a tidydraws frame).
+``fc.draws`` (n_draws x n_players) and ``fc.frame`` (one row per player, in
+the same order) are views of it for the decision engine. Saved as one NetCDF
+file, forecast.nc, with the points stored in tenths of a point.
 
 Two forecast models (``model=``):
 
@@ -20,11 +30,14 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict
+from functools import cached_property
 from pathlib import Path
 
 import numpy as np
 import polars as pl
+import tidydraws as td
+import xarray as xr
 
 from . import data as D
 # pyrefly: ignore [missing-import]
@@ -36,27 +49,86 @@ from .qblink import NO_QB, fit_qb_linked
 log = logging.getLogger(__name__)
 
 SUMMARY_COLS = ('player_id', 'player', 'position', 'team', 'opp_team')
+LABELS = ('player', 'position', 'team', 'opp_team')     # carried as coordinates on the points
+FILE = 'forecast.nc'
+_NULL = '__null__'                                     # stands in for a null string in the file (netCDF drops '\x00')
+_DUP = '__dup'                                         # suffix that makes a repeated player_id unique
+# points on disk: whole tenths of a point (scores come in 0.1 steps), at most 0.05 pts off
+_POINTS_ENCODING = {'dtype': 'int16', 'scale_factor': 0.1, '_FillValue': np.iinfo(np.int16).min,
+                    'zlib': True, 'complevel': 4}
 
 
-@dataclass
 class WeekForecast:
-    season: int
-    week: float
-    frame: pl.DataFrame               # scored rows, aligned with draws' columns
-    draws: np.ndarray                 # (n_draws, n_rows), fantasy points
-    skipped: pl.DataFrame             # rows the models couldn't score, with a reason
-    meta: dict = field(default_factory=dict)
+    """One week's forecast. ``dt`` (an xarray DataTree) is the forecast; ``draws``,
+    ``frame`` and ``skipped`` are views of it. Build from arrays with
+    ``WeekForecast(season, week, frame=..., draws=..., skipped=..., meta=...)``
+    or from a tree with ``WeekForecast(season, week, dt=...)``."""
+
+    def __init__(self, season: int, week: float, frame: pl.DataFrame | None = None,
+                 draws: np.ndarray | None = None, skipped: pl.DataFrame | None = None,
+                 meta: dict | None = None, dt: xr.DataTree | None = None):
+        self.season, self.week = int(season), float(week)
+        self.meta = dict(meta or {})
+        if dt is None:
+            if frame is None or draws is None:
+                raise ValueError('give frame and draws, or dt')
+            dt = forecast_tree(np.asarray(draws), frame, _chains(self.meta, np.shape(draws)[0]),
+                               skipped=skipped)
+        self.dt = dt
+        if frame is not None:                         # keep the caller's frame exactly
+            self.__dict__['frame'] = frame
+
+    # ----------------------------------------------------------- views
+    @property
+    def points(self) -> xr.DataArray:
+        """(chain, draw, player_id) fantasy points, with the player labels as coordinates."""
+        return self.dt['predictions']['points']
+
+    @cached_property
+    def draws(self) -> np.ndarray:
+        """(n_draws, n_players) matrix for the decision engine, chains stacked in order."""
+        p = self.points
+        return np.asarray(p.values, dtype='float64').reshape(-1, p.sizes['player_id'])
+
+    @cached_property
+    def frame(self) -> pl.DataFrame:
+        """One row per player, in the order of ``draws``' columns."""
+        return _frame_from_tree(self.dt)
+
+    @cached_property
+    def skipped(self) -> pl.DataFrame:
+        return _table_from_ds(self.dt['skipped'].to_dataset()) if 'skipped' in self.dt.children else pl.DataFrame()
 
     def summary(self) -> pl.DataFrame:
         return player_summary(self.draws, self.frame)
 
+    def tidy(self) -> pl.DataFrame:
+        """tidydraws long frame: one row per player per draw, with his labels and model inputs.
+        Player columns come from ``frame`` (proper nulls and dtypes), not the stored copies."""
+        p = self.points
+        bare = xr.DataTree.from_dict({'predictions': p.drop_vars([c for c in LABELS if c in p.coords]).to_dataset()})
+        players = self.frame.with_columns(pl.Series('player_id', p.player_id.values.astype(str)))  # tree's ids
+        return td.prediction_draws(bare, players, 'points', join_on='player_id')
+
+    def __repr__(self) -> str:
+        return (f'WeekForecast({self.season} wk {self.week:g}: {self.points.sizes["player_id"]} players, '
+                f'{self.points.sizes["chain"]} chains x {self.points.sizes["draw"]} draws)')
+
     # ---------------------------------------------------------------- io
     def save(self, out_dir: Path | str) -> Path:
+        """forecast.nc (the tree), plus summary.csv to open in a spreadsheet and meta.json,
+        written last: its presence marks a complete forecast."""
         out = Path(out_dir)
         out.mkdir(parents=True, exist_ok=True)
-        self.frame.write_parquet(out / 'frame.parquet')
-        np.save(out / 'draws.npy', self.draws.astype('float32'))
-        self.skipped.write_parquet(out / 'skipped.parquet')
+        tree = self.dt.copy()
+        tree.attrs = {**tree.attrs, 'season': self.season, 'week': self.week,
+                      'meta': json.dumps(self.meta, default=str)}
+        enc = {'/predictions': {'points': _POINTS_ENCODING}}
+        for path in ('/predictions_constant_data', '/skipped'):
+            if path.strip('/') in tree.children:
+                enc[path] = {v: {'zlib': True, 'complevel': 4} for v in tree[path].data_vars
+                             if tree[path][v].dtype.kind in 'fiub'}
+        tree.to_netcdf(out / FILE, encoding=enc, engine='netcdf4')
         self.summary().write_csv(out / 'summary.csv')
         (out / 'meta.json').write_text(json.dumps(
             {'season': self.season, 'week': self.week, **self.meta}, indent=2, default=str))
@@ -65,6 +137,12 @@ class WeekForecast:
     @classmethod
     def load(cls, out_dir: Path | str) -> 'WeekForecast':
         out = Path(out_dir)
+        if (out / FILE).exists():
+            with xr.open_datatree(out / FILE, engine='netcdf4') as f:
+                dt = f.load()
+            meta = json.loads(dt.attrs.get('meta', '{}'))
+            return cls(season=dt.attrs['season'], week=dt.attrs['week'], meta=meta, dt=dt)
+        # forecasts saved before forecast.nc: frame.parquet + draws.npy (+ skipped.parquet)
         meta = json.loads((out / 'meta.json').read_text())
         frame = pl.read_parquet(out / 'frame.parquet')
         draws = np.load(out / 'draws.npy').astype('float64')
@@ -73,6 +151,111 @@ class WeekForecast:
         skipped = pl.read_parquet(out / 'skipped.parquet') if (out / 'skipped.parquet').exists() else frame.head(0)
         return cls(season=int(meta.pop('season')), week=float(meta.pop('week')), frame=frame, draws=draws,
                    skipped=skipped, meta=meta)
+
+
+def _chains(meta: dict, n_draws: int) -> int:
+    """Draws are stacked chain by chain; NUTS fits split back into their chains."""
+    s = meta.get('settings', {})
+    chains = int(s.get('chains', 1)) if s.get('method', 'nuts') == 'nuts' else 1
+    return chains if chains > 0 and n_draws % chains == 0 else 1
+
+
+def _ds_from_table(df: pl.DataFrame, dim: str, index: str | None = None) -> xr.Dataset:
+    """A polars table as a Dataset along ``dim``; column order and dtypes kept in attrs
+    so _table_from_ds can rebuild it exactly (null strings and integers survive)."""
+    data = {}
+    for c in df.columns:
+        if c == index:
+            continue
+        col = df[c]
+        if col.dtype in (pl.String, pl.Categorical, pl.Enum):
+            vals = col.cast(pl.String).fill_null(_NULL).to_numpy().astype(object)
+        elif col.dtype == pl.Boolean:
+            vals = col.cast(pl.Int8).fill_null(-1).to_numpy()
+        elif col.dtype.is_integer() and col.null_count():
+            vals = col.cast(pl.Float64).to_numpy()
+        else:
+            vals = col.to_numpy()
+        data[c] = (dim, vals)
+    coords = {dim: df[index].to_numpy().astype(object)} if index else {dim: np.arange(df.height)}
+    return xr.Dataset(data, coords=coords, attrs={'columns': json.dumps(df.columns),
+                                                  'dtypes': json.dumps({c: str(t) for c, t in df.schema.items()})})
+
+
+def _table_from_ds(ds: xr.Dataset, extra: dict | None = None) -> pl.DataFrame:
+    dim = next(iter(ds.dims), None)
+    cols = json.loads(ds.attrs.get('columns', '[]'))
+    if dim is None or not cols:
+        return pl.DataFrame()
+    dtypes = json.loads(ds.attrs.get('dtypes', '{}'))
+    series = {dim: pl.Series(dim, ds[dim].values.astype(object) if ds[dim].dtype == object else ds[dim].values)}
+    series.update(extra or {})
+    for c in cols:
+        if c in series:
+            continue
+        v = ds[c].values
+        t = dtypes.get(c, '')
+        if t.startswith(('String', 'Categorical', 'Enum')):
+            s_ = pl.Series(c, v.astype(str)).replace(_NULL, None)
+        elif t == 'Boolean':
+            s_ = pl.Series(c, v).replace(-1, None).cast(pl.Boolean)
+        else:
+            s_ = pl.Series(c, v)
+            if s_.dtype.is_float():
+                s_ = s_.fill_nan(None)
+        series[c] = s_
+    out = pl.DataFrame([series[c] for c in cols if c in series])
+    return out.cast({c: _dtype(t) for c, t in dtypes.items() if c in out.columns and _dtype(t) is not None},
+                    strict=False)
+
+
+def _dtype(name: str):
+    """'Int32' -> pl.Int32 for the simple dtypes; None for anything else (left as read)."""
+    return getattr(pl, name) if name.isidentifier() and hasattr(pl, name) else None
+
+
+def forecast_tree(draws: np.ndarray, frame: pl.DataFrame, chains: int = 1,
+                  skipped: pl.DataFrame | None = None) -> xr.DataTree:
+    """The forecast as a DataTree: points (chain, draw, player_id) with the player labels as
+    coordinates, the rest of ``frame`` as predictions_constant_data, and ``skipped``."""
+    ids = frame['player_id'].to_list()
+    dedup = len(set(ids)) != len(ids)
+    if dedup:                                         # a dimension index has to be unique; undone on load
+        frame = frame.with_columns(pl.Series('player_id', [f'{p}{_DUP}{i}' for i, p in enumerate(ids)]))
+    n_draws, n_players = draws.shape
+    labels = [c for c in LABELS if c in frame.columns]
+    points = xr.DataArray(
+        draws.reshape(chains, n_draws // chains, n_players), dims=('chain', 'draw', 'player_id'),
+        coords={'chain': np.arange(chains), 'draw': np.arange(n_draws // chains),
+                'player_id': frame['player_id'].to_numpy().astype(object),
+                **{c: ('player_id', frame[c].cast(pl.String).fill_null('').to_numpy().astype(object))
+                   for c in labels}},
+        name='points', attrs={'units': 'fantasy points'})
+    constant = _ds_from_table(frame, 'player_id', index='player_id')
+    constant = constant.drop_vars([c for c in labels if c in constant.data_vars])
+    constant.attrs['labels'] = json.dumps(labels)
+    constant.attrs['dedup'] = int(dedup)
+    groups = {'predictions': points.to_dataset(), 'predictions_constant_data': constant}
+    if skipped is not None and skipped.height:
+        groups['skipped'] = _ds_from_table(skipped, 'row')
+    return xr.DataTree.from_dict(groups)
+
+
+def _frame_from_tree(dt: xr.DataTree) -> pl.DataFrame:
+    """Rebuild the player frame: labels from the points' coordinates, the rest from the
+    constant-data group, in the original column order and dtypes."""
+    points, const = dt['predictions']['points'], dt['predictions_constant_data'].to_dataset()
+    labels = json.loads(const.attrs.get('labels', '[]'))
+    dtypes = json.loads(const.attrs.get('dtypes', '{}'))
+
+    def _label(c):
+        s_ = pl.Series(c, points[c].values.astype(str))
+        return s_.replace('', None) if dtypes.get(c, 'String').startswith('String') else s_
+
+    out = _table_from_ds(const, extra={c: _label(c) for c in labels})
+    if int(const.attrs.get('dedup', 0)):          # strip the suffix that made repeated ids unique
+        out = out.with_columns(pl.col('player_id').str.replace(f'{_DUP}\\d+$', ''))
+    return out
 
 
 def player_summary(draws: np.ndarray, frame: pl.DataFrame) -> pl.DataFrame:

@@ -129,12 +129,21 @@ STARTER_COLS_TRAIN = ('offense_pct', 'trail_pts')
 STARTER_COLS_FORECAST = ('lag_offense_pct', 'trail_pts')
 
 
+METHODS = ('nuts', 'pathfinder', 'advi')
+
+
 @dataclass(frozen=True)
 class SamplerSettings:
     """How to fit. NUTS via nutpie, 4 chains x 1000 draws / 1000 tune, is the
     production default (the team-context ablation used 2 x 500 / 500).
-    Chains run in parallel (cores = chains). ADVI is for smoke runs only."""
-    method: str = 'nuts'             # 'nuts' | 'advi'
+    Chains run in parallel (cores = chains).
+
+    Faster approximations (see check_approx.py for how close they get):
+      'pathfinder'  multi-path Pathfinder (pymc-extras): L-BFGS paths + importance
+                    resampling, pathfinder_paths x pathfinder_draws_per_path draws,
+                    pathfinder_draws kept
+      'advi'        mean-field ADVI: fast but understates posterior spread; smoke runs"""
+    method: str = 'nuts'             # 'nuts' | 'pathfinder' | 'advi'
     nuts_sampler: str = 'nutpie'     # 'nutpie' | 'pymc'
     draws: int = 1000
     tune: int = 1000
@@ -142,15 +151,19 @@ class SamplerSettings:
     target_accept: float = 0.95
     advi_n: int = 20_000
     advi_draws: int = 500
+    pathfinder_paths: int = 8
+    pathfinder_draws: int = 1000
+    pathfinder_draws_per_path: int = 1000
     seed: int = 0
     extra: dict = field(default_factory=dict)
 
     def __post_init__(self):
-        if self.method not in ('nuts', 'advi'):
-            raise ValueError(f"method must be 'nuts' or 'advi', got {self.method!r}")
+        if self.method not in METHODS:
+            raise ValueError(f"method must be one of {METHODS}, got {self.method!r}")
         if self.nuts_sampler not in ('nutpie', 'pymc'):
             raise ValueError(f"nuts_sampler must be 'nutpie' or 'pymc', got {self.nuts_sampler!r}")
 
     @property
     def n_draws(self) -> int:
-        return self.draws * self.chains if self.method == 'nuts' else self.advi_draws
+        return {'nuts': self.draws * self.chains, 'advi': self.advi_draws,
+                'pathfinder': self.pathfinder_draws}[self.method]

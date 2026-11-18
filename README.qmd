@@ -9,6 +9,68 @@ Who should I start this week in fantasy football? Fantasy football is a multi-bi
 
 So who should have this person started going into the game? Since we were little we were probably told to think through the worst case outcomes before making a decision. Instead of using rules of thumb or preconceptions about players or matchups heading into the game, what if we could incorporate the uncertainty in our forecasts and a set of the worst case decisions to make more informed roster decisions?  
 
+## Quick start
+
+You need Python 3.14, [`uv`](https://docs.astral.sh/uv/) and a network connection (all data comes from [nflverse](https://github.com/nflverse)). From the project root:
+
+```bash
+uv sync                                       # install dependencies
+uv run python src/ff.py build-data            # NFL data through last week (~30 s)
+uv run python src/ff.py build-team-form       # team-strength model (a few minutes)
+uv run marimo run fantasy_decisions.py        # open the app in your browser
+```
+
+In the app:
+
+1. Pick the **season and week** you're setting a lineup for.
+2. Enter **your roster**, and optionally your opponent's: search by name, filter by position or team, or paste names / Sleeper / ESPN / Yahoo ids. Set your league's roster size; the app refuses a roster that's too big, a player on both rosters, or one that can't fill a lineup, and lists anyone who can't start this week.
+3. Open **Build a forecast for this week** and click Build. *Fast* takes a few minutes; *Full* is the production fit (see [Time and hardware](#time-and-hardware)).
+4. Choose a **decision rule** and read the recommended lineup, the runner-up, and whether the call is a near tie.
+5. Optionally swap players yourself and see how your lineup compares with the recommendation, then save it.
+
+Your rosters are remembered in `rosters/` and saved lineups in `lineups/`.
+
+## What it predicts
+
+- **Points:** `total_fantasy_points` from nflverse's `ff_opportunity` data (PPR scoring).
+- **Lineup:** QB, 2 RB, 2 WR, TE and 1 FLEX (RB/WR/TE). No kickers or defenses. Other formats: change `ROSTER` and `N_FLEX` in `src/ffpred/config.py`.
+- **Who gets a forecast:** players on an active NFL roster that week (nflverse rosters) **with at least one game in your data**. Rookies appear after their first game once you rebuild the data; inactive players and teams on bye are left out.
+- **Joint draws:** each forecast is 4,000 simulated weeks for every player at once, so lineup totals, floors and head-to-head odds include the way a QB and his receivers rise and fall together.
+
+## Every week
+
+Rebuild the data **before** forecasting. A forecast only knows the games in `processed-data/`, so stale data quietly gives stale projections (last season's form, no rookies).
+
+```bash
+uv run python src/ff.py build-data && uv run python src/ff.py build-team-form
+```
+
+Then build the new week in the app, or from the command line.
+
+### Command line
+
+Everything the app does is also available from one entry point:
+
+```bash
+# forecast the coming week -> forecasts/2026_wk10/
+uv run python src/ff.py forecast 2026 10
+uv run python src/ff.py forecast 2026 10 --draws 250 --tune 250 --chains 2     # quicker fit
+
+# choose a lineup: roster = a .txt (one id or name per line), a .csv with player_id or player, or a comma list
+uv run python src/ff.py decide forecasts/2026_wk10 --roster rosters/my_roster.txt --rule maximize_expected
+uv run python src/ff.py decide forecasts/2026_wk10 --roster rosters/my_roster.txt --rule cvar_averse --opponent rosters/opponent.txt
+uv run python src/ff.py decide forecasts/2026_wk10 --roster rosters/my_roster.txt --rule head_to_head --opponent rosters/opponent.txt
+
+# every week of a season in one go (skips weeks already saved; replays played weeks + the upcoming one)
+uv run python src/forecast_season.py
+uv run python src/forecast_season.py --speed fast --no-next       # history only, quick fits
+```
+
+`decide` lists players on your roster who aren't in the forecast, prints the lineup with each player's projection, floor and ceiling, and reports the runner-up; when the gap is within simulation noise it prints **NEAR TIE** and the interchangeable players. `uv run python src/ff.py --help` lists every command; `src/README.md` has the details.
+
+
+## Background
+
 Throughout the last four years of playing fantasy football, I have found myself wanting a bit more from the predictions that my platform produces every week. Part of it is that it only produces a single point estimate and some, what I presume, MCMC simulations of the floor, ceiling, and mean outcome. Personally, I would like to see all this as I agonize over whether I should start or sit a player. So I decided to build a fully Bayesian pipeline for forecasting and making roster decisions using a similar setup to [this PyMC Labs blog post](https://www.pymc-labs.com/blog-posts/probabilistic-forecasting-optimization-under-uncertainty). The approach only works if the predictive intervals are honest, so most of the effort below goes into checking that they are.
 
 
@@ -388,5 +450,5 @@ The structure (scenarios from the posterior predictive, then optimization over t
 - [ ] Let the predictive spread grow with the projection (fixes the tier calibration above). A first version improved CRPS by about 2% but pulled down projections for top players, because tying the spread to the mean biases the mean; the next version ties it to the player's trailing average instead.
 - [ ] Compare lineups chosen with and without that change by realized points, not just forecast scores.
 - [ ] Try out [Alchemize](https://github.com/pymc-labs/alchemize) to rebuild the underlying models in Rust to speed up sampling.
-- [ ] Build a friendlier interface to use.
+- [x ] Build a friendlier interface to use.
 - [ ] Add a scheduler so I don't have to run this manually every week.

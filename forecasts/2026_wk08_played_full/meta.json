@@ -1,0 +1,53 @@
+{
+  "season": 2026,
+  "week": 8.0,
+  "source": "played",
+  "forecast_model": "qb_linked",
+  "window_seasons": 3,
+  "settings": {
+    "method": "nuts",
+    "nuts_sampler": "nutpie",
+    "draws": 2000,
+    "tune": 2000,
+    "chains": 4,
+    "target_accept": 0.95,
+    "advi_n": 20000,
+    "advi_draws": 500,
+    "pathfinder_paths": 8,
+    "pathfinder_draws": 1000,
+    "pathfinder_draws_per_path": 1000,
+    "seed": 0,
+    "extra": {}
+  },
+  "fits": {
+    "hurdle_qblink": {
+      "n_train": 10876,
+      "n_players": 679,
+      "n_scored": 221,
+      "n_skipped": 3,
+      "fit_time": 1931.9,
+      "divergences": 0,
+      "max_rhat": 1.0,
+      "min_ess_bulk": 1012.0,
+      "lam_rec": {
+        "RB": 0.04717481469263453,
+        "TE": 0.15659723633952868,
+        "WR": 0.2039106429211082
+      },
+      "share_linked_to_qb": 0.9683257918552036
+    },
+    "het_gp_qb_vegas": {
+      "n_train": 1557,
+      "n_players": 101,
+      "n_scored": 32,
+      "n_skipped": 0,
+      "fit_time": 34.8,
+      "divergences": 0,
+      "max_rhat": 1.0,
+      "min_ess_bulk": 823.0,
+      "train_residual_sd": 0.9717949966948652
+    }
+  },
+  "n_draws": 8000,
+  "has_outcomes": true
+}

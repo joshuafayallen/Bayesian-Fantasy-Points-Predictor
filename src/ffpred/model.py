@@ -300,14 +300,7 @@ def fit(train: pl.DataFrame, cfg: HetConfig, settings: SamplerSettings = Sampler
     model = build_het_gp(prep.train_arrays, prep)
     s = settings
     t0 = time.time()
-    with model:
-        if s.method == 'advi':
-            approx = pm.fit(n=s.advi_n, method='advi', random_seed=s.seed, progressbar=False)
-            idata = approx.sample(s.advi_draws, random_seed=s.seed)
-        else:
-            idata = pm.sample(draws=s.draws, tune=s.tune, chains=s.chains, cores=s.chains,
-                              random_seed=s.seed, progressbar=False, target_accept=s.target_accept,
-                              nuts_sampler=s.nuts_sampler, **s.extra)
+    idata = sample_posterior(model, s)
     fit_time = time.time() - t0
 
     divergences, max_rhat, min_ess = 0, None, None
@@ -323,6 +316,23 @@ def fit(train: pl.DataFrame, cfg: HetConfig, settings: SamplerSettings = Sampler
         log.warning('%s: max r_hat %.3f > 1.05 on the population parameters', cfg.name, max_rhat)
     return FittedModel(cfg=cfg, prep=prep, model=model, idata=idata, settings=s, fit_time=fit_time,
                        divergences=divergences, max_rhat=max_rhat, min_ess_bulk=min_ess)
+
+
+def sample_posterior(model: pm.Model, s: SamplerSettings):
+    """Posterior draws by s.method: NUTS (default), Pathfinder or ADVI. Time
+    includes compiling the model."""
+    with model:
+        if s.method == 'advi':
+            approx = pm.fit(n=s.advi_n, method='advi', random_seed=s.seed, progressbar=False)
+            return approx.sample(s.advi_draws, random_seed=s.seed)
+        if s.method == 'pathfinder':
+            import pymc_extras as pmx
+            return pmx.fit(method='pathfinder', num_paths=s.pathfinder_paths, num_draws=s.pathfinder_draws,
+                           num_draws_per_path=s.pathfinder_draws_per_path, random_seed=s.seed,
+                           progressbar=False, **s.extra)
+        return pm.sample(draws=s.draws, tune=s.tune, chains=s.chains, cores=s.chains,
+                         random_seed=s.seed, progressbar=False, target_accept=s.target_accept,
+                         nuts_sampler=s.nuts_sampler, **s.extra)
 
 
 def _diagnostics(idata, chains: int, var_names=SCALAR_DIAG_VARS) -> tuple[float | None, float | None]:

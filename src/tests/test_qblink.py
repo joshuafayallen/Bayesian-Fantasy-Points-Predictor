@@ -81,3 +81,10 @@ def test_qb_linked_forecast_and_backtest_advi(tmp_path, league, league_team_form
     backtest.run_fold('het_gp_qb_vegas', 2023, 5.0, league, league_team_form, tmp_path / 'bt', ADVI, min_train_rows=20)
     d = backtest.paired_diff(backtest.load_run(tmp_path / 'bt')[0], 'qb_linked_qb', 'het_gp_qb_vegas')
     assert d['n_folds'] == 1
+
+
+def test_qb_linked_forecast_pathfinder(league, league_team_form):
+    s = SamplerSettings(method='pathfinder', pathfinder_paths=2, pathfinder_draws=50, pathfinder_draws_per_path=100)
+    assert s.n_draws == 50
+    fc = forecast_week(league, league_team_form, 2023, 5.0, settings=s, min_train_rows=20)
+    assert fc.draws.shape == (50, fc.frame.height) and np.isfinite(fc.draws).all()

@@ -248,7 +248,9 @@ def build_processed(seasons: list[int] | None = None, legacy: bool = False,
                     .filter(pl.len().over('pfr_id') == 1))
     add_ids = (
         snaps.join(snap_ids, left_on=['pfr_player_id'], right_on=['pfr_id'])
-        .filter(pl.col('position').is_in(['TE', 'RB', 'WR', 'QB', 'FB']))
+        # snap counts label some teams' running backs 'HB' (the Bengals in 2020 and 2025-26);
+        # without it those players' games all drop out at the inner join below
+        .filter(pl.col('position').is_in(['TE', 'RB', 'HB', 'WR', 'QB', 'FB']))
         .select('game_id', 'gsis_id', 'offense_pct', 'st_pct')
     )
     if not legacy:
